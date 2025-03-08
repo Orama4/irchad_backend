@@ -22,13 +22,13 @@ app.get("/getSales", (req, res) => {
 
 // Démarrage contrôlé du serveur
 const server = app.listen(port, () => {
-  console.log(`✅ Stats service actif sur http://localhost:${port}`);
+  console.log(`Stats service actif sur http://localhost:${port}`);
 });
 
 // Gestion propre de l'arrêt
 process.on("SIGINT", () => {
   server.close(() => {
-    console.log("\n🔴 Serveur arrêté proprement");
+    console.log("\nSer veur arrêté proprement");
     process.exit(0);
   });
 });

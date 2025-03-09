@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import { getSalesKPIs,getTopProducts } from './controllers/dashboardController'; // Importez le contrôleur
 
 // Configuration des variables d'environnement
 dotenv.config();
@@ -19,6 +20,10 @@ app.get("/", (req, res) => {
     message: "Données de vente stables"
   });
 });
+
+app.get('/api/test', getSalesKPIs);
+app.get('/api/tests', getTopProducts);
+
 
 // Démarrage contrôlé du serveur
 const server = app.listen(port, () => {

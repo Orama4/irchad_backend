@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(cors());
 
 // Route de test
-app.get("/getSales", (req, res) => {
+app.get("/", (req, res) => {
   res.json({
     sales: 15000,
     message: "Données de vente stables"

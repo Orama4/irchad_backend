@@ -4,13 +4,19 @@ import { DeviceStatus } from "@prisma/client";
 
 export const getAllDevices = async (req: Request, res: Response) => {
     try {
-        const devices = await getDevices();
-        res.json(devices);
+        const page = parseInt(req.query.page as string) || 1;
+        const pageSize = parseInt(req.query.pageSize as string) || 10;
+        const { devices, total } = await getDevices(page, pageSize);
+        res.json({
+            devices,
+            totalPages: Math.ceil(total / pageSize), 
+            currentPage: page
+        });
     } catch (error) {
-        console.log(error)
         res.status(500).json({ message: "Error fetching devices" });
     }
 };
+
 
 
 export const getDeviceStatistics = async (req: Request, res: Response) => {

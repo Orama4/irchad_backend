@@ -2,9 +2,16 @@ import { PrismaClient, DeviceStatus  } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export const getDevices = async () => {
-    return await prisma.device.findMany();
+export const getDevices = async (page = 1,pageSize = 10) => {
+    const skip = (page - 1) * pageSize; 
+    const devices = await prisma.device.findMany({
+        skip: skip,
+        take: pageSize,
+    })
+    const total = await prisma.device.count();
+    return {devices,total}
 };
+
 
 
 

@@ -22,6 +22,8 @@ const server = app.listen(port, () => {
   console.log(`Stats service actif sur http://localhost:${port}`);
 });
 
+export { app, server };
+
 // Gestion propre de l'arrêt
 process.on("SIGINT", () => {
   server.close(() => {

@@ -7,11 +7,10 @@ export const getTotalSalesService = async (): Promise<number> => {
 
 export const getTotalRevenueService = async (): Promise<number> => {
     const sales = await prisma.sale.findMany({
-        include: { device: true }, // Récupérer les informations des devices liés
+        include: { device: true }, 
     });
 
-    // Calculer la somme des prix
-    const totalRevenue = sales.reduce((sum : number , sale : number ) => sum + (sale.device.price || 0), 0);
+    const totalRevenue = sales.reduce((sum : number , sale  ) => sum + (sale.device.price || 0), 0);
 
     return totalRevenue;
     };
@@ -32,7 +31,7 @@ export const getTotalRevenueService = async (): Promise<number> => {
             ORDER BY period ASC;
         `;
     
-        // Convertir BigInt en Number
+        // Convertir BigInt en Number  ??? 
         return salesStats.map(stat => ({
             period: stat.period,
             totalSales: Number(stat.totalsales) // Convert BigInt en Number
@@ -62,4 +61,6 @@ export const getSalesListService = async (page: number, pageSize: number, filter
 
     return { sales, total };
 };
+
+
 

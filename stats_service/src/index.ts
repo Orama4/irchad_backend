@@ -14,6 +14,9 @@ app.use(cors());
 
 
 app.use('/sales',saleRouter);
+
+
+
 // Route de test
 app.get("/getSales", (req, res) => {
   res.json({
@@ -34,3 +37,6 @@ process.on("SIGINT", () => {
     process.exit(0);
   });
 });
+
+
+export default app;

@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import deviceRoutes from "./routes/deviceRoutes"; 
 
 // Configuration des variables d'environnement
 dotenv.config();
@@ -12,13 +13,9 @@ const port = process.env.PORT || 5001;
 app.use(express.json());
 app.use(cors());
 
-// Route de test
-app.get("/getSales", (req, res) => {
-  res.json({
-    sales: 15000,
-    message: "Données de vente stables"
-  });
-});
+
+//Routes of devices service 
+app.use("/api", deviceRoutes);
 
 // Démarrage contrôlé du serveur
 const server = app.listen(port, () => {

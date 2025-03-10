@@ -1,7 +1,12 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import zoneRoutes from "./routes/zoneRoutes"; 
 
+
+import { PrismaClient  } from "@prisma/client";
+
+const prisma = new PrismaClient();
 // Configuration des variables d'environnement
 dotenv.config();
 
@@ -19,6 +24,11 @@ app.get("/getSales", (req, res) => {
     message: "Données de vente stables"
   });
 });
+
+
+//Routes of zones service 
+app.use("/api", zoneRoutes);
+
 
 // Démarrage contrôlé du serveur
 const server = app.listen(port, () => {

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getTotalSalesService, getTotalRevenueService ,getSalesListService } from '../services/saleService';
+import { getTotalSalesService, getTotalRevenueService ,getSalesListService ,getSalesStatisticsService } from '../services/saleService';
 
 export const getTotalSales = async (req: Request, res: Response) => {
     try {
@@ -18,20 +18,45 @@ export const getTotalRevenue = async (req: Request, res: Response) => {
         res.status(500).json({ error: (error as Error).message });
     }
 };
+// interface SalesStatisticsRequest {
+//     startDate: string;
+//     groupBy: "day" | "month" | "year";
+// }
 
+export const getSalesStatistics = async (req: Request, res: Response) => {
+    try {
+        const { startDate, groupBy } = req.body 
 
+        if (!startDate) {
+            return res.status(400).json({ error: "La date de début est requise." });
+        }
+
+        if (!["day", "month", "year"].includes(groupBy)) {
+            return res.status(400).json({ error: "Le groupBy doit être 'day', 'month' ou 'year'." });
+        }
+
+        const endDate = new Date(); 
+
+        const salesStats = await getSalesStatisticsService(new Date(startDate), endDate, groupBy);
+
+        res.status(200).json(salesStats);
+    } catch (error) {
+        res.status(500).json({ error: (error as Error).message });
+    }
+};
 export const getSalesList = async (req: Request, res: Response) => {
     try {
-        // Récupérer les paramètres de pagination depuis la requête
+        // Récupérer les paramètres de pagination
         const page = parseInt(req.query.page as string) || 1;
         const pageSize = parseInt(req.query.pageSize as string) || 10;
+        const filter = req.query.filter as string || "all"; // Récupérer le filtre
 
-        const { sales, total } = await getSalesListService(page, pageSize);
+        const { sales, total } = await getSalesListService(page, pageSize, filter);
 
         res.status(200).json({
             sales,
             total,
-            totalPages: Math.ceil(total / pageSize), // Nombre total de pages
+            totalPages: Math.ceil(total / pageSize),
             currentPage: page,
         });
     } catch (error) {

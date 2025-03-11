@@ -1,5 +1,6 @@
 generator client {
     provider = "prisma-client-js"
+    binaryTargets = ["native", "windows"]
 }
 
 datasource db {
@@ -150,6 +151,7 @@ model Zone {
   envId   Int
   name    String   @db.VarChar(255)
   type    ZoneType
+  createdAt  DateTime @default(now())
   color   String   @db.VarChar(50)
   icon    String   @db.VarChar(255)
   cords   Json

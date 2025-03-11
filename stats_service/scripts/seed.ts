@@ -1,4 +1,5 @@
 // seed.ts
+/*
 import { PrismaClient } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 
@@ -23,7 +24,7 @@ async function main() {
         },
         endUser: {
           create: {
-            status:"active",
+            status: "active",
             lastPos: JSON.stringify({ lat: faker.location.latitude(), lng: faker.location.longitude() }),
           },
         },
@@ -40,7 +41,7 @@ async function main() {
     console.log(`Created User with EndUser: ${user.email}`);
   }
 
-  // Créer des dispositifs
+  /* Créer des dispositifs
   for (let i = 0; i < 20; i++) {
     await prisma.device.create({
       data: {
@@ -52,9 +53,9 @@ async function main() {
         price: faker.number.int({ min: 100, max: 1000 }),
       },
     });
-  }
+  }*/
 
-  // Créer des ventes
+  /* Créer des ventes
   for (let i = 0; i < 50; i++) {
     await prisma.sale.create({
       data: {
@@ -69,13 +70,111 @@ async function main() {
     });
   }
 
+  // Créer des environnements
+  const environmentIds: number[] = []; // Stocker les IDs des environnements créés
+
+  for (let i = 0; i < 5; i++) {
+    const environment = await prisma.environment.create({
+      data: {
+        name: faker.company.name(),
+        address: faker.location.streetAddress(),
+        cords: JSON.stringify({ lat: faker.location.latitude(), lng: faker.location.longitude() }),
+        pathCartographie: faker.system.filePath(),
+        scale: faker.number.int({ min: 1, max: 10 }),
+      },
+    });
+
+    environmentIds.push(environment.id); // Ajouter l'ID de l'environnement à la liste
+
+    console.log(`Created Environment: ${environment.name}`);
+  }
+
+  // Créer des zones
+  for (let i = 0; i < 10; i++) {
+    await prisma.zone.create({
+      data: {
+        name: faker.location.city(),
+        type: faker.helpers.arrayElement(['Zone_de_circulation','Zone_de_travail']),// Remplacez par vos types de zone réels
+        color: faker.internet.color(),
+        icon: faker.image.url(),
+        cords: JSON.stringify({ lat: faker.location.latitude(), lng: faker.location.longitude() }),
+        environment: {
+          connect: { id: faker.helpers.arrayElement(environmentIds) }, // Relier à un environnement existant
+        },
+      },
+    });
+
+    console.log(`Created Zone: ${i + 1}`);
+  }
+
   console.log('Seeding completed successfully!');
 }
 
 main()
   .catch((e) => {
     console.error(e);
-   // process.exit(1);
+    // process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });*/
+
+  import { PrismaClient } from '@prisma/client';
+import { faker } from '@faker-js/faker';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  // Create environments first (required for zones)
+  const environment = await prisma.environment.create({
+    data: {
+      name: faker.company.name(),
+      address: faker.location.streetAddress(),
+      cords: JSON.stringify({ lat: faker.location.latitude(), lng: faker.location.longitude() }),
+      pathCartographie: faker.system.filePath(),
+      scale: faker.number.int({ min: 1, max: 10 }),
+    },
+  });
+
+  console.log(`Created Environment: ${environment.name}`);
+
+  // Function to generate a random date within a specific month and year
+  function getRandomDateInMonth(year: number, month: number): Date {
+    const startDate = new Date(year, month - 1, 1); // Month is 0-indexed in JavaScript
+    const endDate = new Date(year, month, 0); // Last day of the month
+    return faker.date.between({ from: startDate, to: endDate });
+  }
+
+  // Create zones with specific months (e.g., April and May)
+  for (let i = 0; i < 10; i++) {
+    // Randomly choose between April and May
+    const month = faker.helpers.arrayElement([4, 5]); // April = 4, May = 5
+    const createdAt = getRandomDateInMonth(2023, month); // Generate a random date in the chosen month
+
+    await prisma.zone.create({
+      data: {
+        name: faker.location.city(),
+        type: faker.helpers.arrayElement(['Zone_de_circulation','Zone_de_travail']), // Replace with your zone types
+        color: faker.internet.color(),
+        icon: faker.image.url(),
+        cords: JSON.stringify({ lat: faker.location.latitude(), lng: faker.location.longitude() }),
+        environment: {
+          connect: { id: environment.id }, // Connect to the created environment
+        },
+        createdAt, // Set the custom createdAt date
+      },
+    });
+
+    console.log(`Created Zone ${i + 1} in month ${month}`);
+  }
+
+  console.log('Seeding completed successfully!');
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+ //   process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();

@@ -1,16 +1,20 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import userRoutes from "./routes/userRoutes"; 
+
 
 // Configuration des variables d'environnement
 dotenv.config();
 
-const app = express();
+export const app = express();
 const port = process.env.PORT || 5001;
 
 // Middlewares
 app.use(express.json());
 app.use(cors());
+
+app.use("/api", userRoutes);
 
 // Route de test
 app.get("/getSales", (req, res) => {
@@ -21,7 +25,7 @@ app.get("/getSales", (req, res) => {
 });
 
 // Démarrage contrôlé du serveur
-const server = app.listen(port, () => {
+export const server = app.listen(port, () => {
   console.log(`Stats service actif sur http://localhost:${port}`);
 });
 

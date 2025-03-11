@@ -8,13 +8,13 @@
       "esModuleInterop": true,
       "skipLibCheck": true,
       "moduleResolution": "node",
-      "types": ["node"]
+      "types": ["node", "jest"]
     },
     "ts-node": {
       "transpileOnly": true,
       "files": true,
       "experimentalReplAwait": false
     },
-    "include": ["src/**/*"],
+    "include": ["src/**/*", "tests/**/*.ts"],
     "exclude": ["node_modules"]
   }

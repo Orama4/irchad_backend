@@ -7,6 +7,7 @@ import {userRoutes} from "./routes/userRoutes";
 import deviceRoutes from "./routes/deviceRoutes"; 
 
 import saleRouter from "./routes/saleRoutes"
+import dashboardRoutes from "./routes/dashboardRoutes";
 // Configuration des variables d'environnement
 dotenv.config();
 
@@ -16,6 +17,8 @@ const port = process.env.PORT || 5001;
 // Middlewares
 app.use(express.json());
 app.use(cors());
+
+app.use("/", dashboardRoutes);
 
 app.use("/users", userRoutes);
 
@@ -39,6 +42,8 @@ app.get("/getSales", (req, res) => {
     message: "Données de vente stables"
   });
 });
+
+
 
 // Démarrage contrôlé du serveur
 export const server = app.listen(port, () => {

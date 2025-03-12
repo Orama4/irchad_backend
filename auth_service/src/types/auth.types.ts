@@ -1,30 +1,25 @@
-import { Role } from "@prisma/client";
-
-export interface RegisterData {
+// auth/types/auth.types.ts
+export interface LoginRequest {
   email: string;
   password: string;
-  role?: Role;
-  profile?: {
-    firstname?: string;
-    lastname?: string;
-    phonenumber?: string;
-    address: string;
-  };
 }
 
-export interface JwtPayload {
-  id: number;
-  role: Role;
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  firstname?: string;
+  lastname?: string;
+  phonenumber?: string;
+  address: string;
+  role?: string;
 }
 
-export interface RequestWithUser extends Request {
-  user?: {
-    id: number;
-    email: string;
-    role: Role;
-    profile?: any;
-    admin?: any;
-    endUser?: any;
-    specificRole?: any;
-  };
+export interface TokenPayload {
+  userId: number;
+  email: string;
+  role?: string;
+}
+
+export interface AuthenticatedRequest extends Express.Request {
+  user?: TokenPayload;
 }

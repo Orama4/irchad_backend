@@ -4,6 +4,8 @@ import dotenv from "dotenv";
 import {zoneRouter} from "./routes/zoneRoutes"
 import {userRoutes} from "./routes/userRoutes"; 
 //const prisma = new PrismaClient();
+import deviceRoutes from "./routes/deviceRoutes"; 
+
 // Configuration des variables d'environnement
 dotenv.config();
 
@@ -16,13 +18,9 @@ app.use(cors());
 
 app.use("/users", userRoutes);
 
-// Route de test
-app.get("/getSales", (req, res) => {
-  res.json({
-    sales: 15000,
-    message: "Données de vente stables"
-  });
-});
+
+//Routes of devices service 
+app.use("/devices", deviceRoutes);
 
 
 //Routes of zones service 

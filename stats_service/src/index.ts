@@ -6,6 +6,7 @@ import {userRoutes} from "./routes/userRoutes";
 //const prisma = new PrismaClient();
 import deviceRoutes from "./routes/deviceRoutes"; 
 
+import saleRouter from "./routes/saleRoutes"
 // Configuration des variables d'environnement
 dotenv.config();
 
@@ -26,6 +27,18 @@ app.use("/devices", deviceRoutes);
 //Routes of zones service 
 app.use("/zones", zoneRouter);
 
+
+app.use('/sales',saleRouter);
+
+
+
+// Route de test
+app.get("/getSales", (req, res) => {
+  res.json({
+    sales: 15000,
+    message: "Données de vente stables"
+  });
+});
 
 // Démarrage contrôlé du serveur
 export const server = app.listen(port, () => {

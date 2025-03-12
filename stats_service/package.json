@@ -7,6 +7,7 @@
   "scripts": {
     "start": "ts-node src/index.ts",
     "build": "tsc",
+    "test": "jest",
     "serve": "node dist/index.js",
     "dev": "nodemon --exec ts-node src/index.ts",
     "seed": "ts-node scripts/seed.ts"
@@ -18,7 +19,6 @@
   "dependencies": {
     "@faker-js/faker": "^9.6.0",
     "@prisma/client": "^6.4.1",
-    "@types/express": "^5.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -30,6 +30,9 @@
     "@babel/preset-typescript": "^7.26.0",
     "@jest/globals": "^29.7.0",
     "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/jest": "^29.5.14",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^22.13.10",
     "@types/supertest": "^6.0.2",
     "babel-jest": "^29.7.0",

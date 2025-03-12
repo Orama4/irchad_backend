@@ -118,7 +118,7 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });*/
-
+/*
   import { PrismaClient } from '@prisma/client';
 import { faker } from '@faker-js/faker';
 
@@ -175,6 +175,58 @@ main()
   .catch((e) => {
     console.error(e);
  //   process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
+
+  */
+
+
+  import { PrismaClient } from "@prisma/client";
+import { faker } from "@faker-js/faker";
+
+const prisma = new PrismaClient();
+
+async function main() {
+  // Fetch all devices and end users
+  const devices = await prisma.device.findMany();
+  const endUsers = await prisma.endUser.findMany();
+
+  if (devices.length === 0 || endUsers.length === 0) {
+    console.error("No devices or end users found. Please seed devices and end users first.");
+    return;
+  }
+
+  // Create random sales
+  for (let i = 0; i < 50; i++) {
+    // Pick a random device and end user
+    const randomDevice = faker.helpers.arrayElement(devices);
+    const randomEndUser = faker.helpers.arrayElement(endUsers);
+
+    // Create a sale
+    await prisma.sale.create({
+      data: {
+        device: {
+          connect: { id: randomDevice.id }, // Connect to a random device
+        },
+        buyer: {
+          connect: { id: randomEndUser.id }, // Connect to a random end user
+        },
+        createdAt: faker.date.past(), // Random date in the past
+      },
+    });
+
+    console.log(`Created Sale ${i + 1}`);
+  }
+
+  console.log("Sales seeding completed successfully!");
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    //process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();

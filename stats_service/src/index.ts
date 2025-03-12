@@ -1,21 +1,20 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import zoneRoutes from "./routes/zoneRoutes"; 
-
-
-import { PrismaClient  } from "@prisma/client";
-
-const prisma = new PrismaClient();
+import {zoneRouter} from "./routes/zoneRoutes"
+import {userRoutes} from "./routes/userRoutes"; 
+//const prisma = new PrismaClient();
 // Configuration des variables d'environnement
 dotenv.config();
 
-const app = express();
+export const app = express();
 const port = process.env.PORT || 5001;
 
 // Middlewares
 app.use(express.json());
 app.use(cors());
+
+app.use("/users", userRoutes);
 
 // Route de test
 app.get("/getSales", (req, res) => {
@@ -27,15 +26,15 @@ app.get("/getSales", (req, res) => {
 
 
 //Routes of zones service 
-app.use("/zones", zoneRoutes);
+app.use("/zones", zoneRouter);
 
 
 // Démarrage contrôlé du serveur
-const server = app.listen(port, () => {
+export const server = app.listen(port, () => {
   console.log(`Stats service actif sur http://localhost:${port}`);
 });
 
-export { app, server };
+//export { app, server };
 // Gestion propre de l'arrêt
 process.on("SIGINT", () => {
   server.close(() => {

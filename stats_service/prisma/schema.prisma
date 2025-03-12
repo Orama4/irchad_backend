@@ -56,6 +56,7 @@ model EndUser{
     devices     Device[]
     helpRequests        HelpRequest[]
     mySales             Sale[]
+    createdAt DateTime @default(now())
 }
 
 

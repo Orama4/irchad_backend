@@ -1,11 +1,7 @@
-import { PrismaClient} from "@prisma/client";
-
-const prisma = new PrismaClient();
-
-
+import prisma from "../lib/prisma";
 export const getZones = async (page = 1,query="",pageSize = 10) => {
     const skip = (page - 1) * pageSize; 
-    const zones =  await prisma.zone.findMany({
+    const zones =  await  prisma.zone.findMany({
       where:{
         name:{
           contains:query
@@ -32,19 +28,17 @@ export const getEZonesKPIs=async()=>{
         _count: { id: true },
         orderBy: { createdAt: 'asc' },
       });
-const groupedByMonth = zonesByMonth.reduce<Record<string, number>>((acc, zone) => {
-  const month = new Date(zone.createdAt).toLocaleString('default', { month: 'short' });
-  acc[month] = (acc[month] || 0) + zone._count.id; // Accumulate the count for each month
-  return acc;
-}, {});
+      const groupedByMonth = zonesByMonth.reduce<Record<string, number>>((acc, zone) => {
+          const month = new Date(zone.createdAt).toLocaleString('default', { month: 'short' });
+          acc[month] = (acc[month] || 0) + zone._count.id; // Accumulate the count for each month
+          return acc;
+            }, {});
 const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const sortedProgressData = monthOrder.map((month) => ({
   name: month,
   value: groupedByMonth[month] || 0,
 }));
-
-console.log(sortedProgressData)
       return {
         totalZones,
       progress: sortedProgressData,

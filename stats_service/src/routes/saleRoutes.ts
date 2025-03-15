@@ -1,9 +1,10 @@
 import express from 'express';
 import { getTotalSales, getTotalRevenue , getSalesList ,getSalesStatistics } from '../controllers/saleController';
+import { authMiddleware } from '../middlewares/authMiddleware';
 
 const router = express.Router();
-router.get('/', getSalesList); 
-router.get('/total-sales', getTotalSales);
-router.get('/total-revenue', getTotalRevenue);
-router.get('/progress-stats', getSalesStatistics);
+router.get('/', authMiddleware, getSalesList); 
+router.get('/total-sales',authMiddleware, getTotalSales);
+router.get('/total-revenue',authMiddleware, getTotalRevenue);
+router.get('/progress-stats', authMiddleware, getSalesStatistics);
 export default router;

@@ -48,9 +48,11 @@ export const getSalesStatistics = async (req: Request, res: Response, next: Next
 
 export const getSalesList = async (req: Request, res: Response) => {
     try {
+        console.log("hello world")
         const page = parseInt(req.query.page as string) || 1;
         const query = req.query?.query as string || ""
         const pageSize = parseInt(req.query.pageSize as string) || 10;
+
         const { sales, total } = await getSalesListService(page,query, pageSize);
 
         res.status(200).json({

@@ -77,4 +77,48 @@ export const getSalesListService = async (page: number, query:string,pageSize: n
 };
 
 
+export const getSales = async (
+  page: number=1,
+  query: string="",
+  pageSize: number=10
+) => {
+  const skip = (page - 1) * pageSize;
 
+  console.log("Building query with:", { skip, pageSize, query });
+
+  // Only apply device type filter if query is provided and not "all"
+  const whereClause = {};
+    if (query && query !== "all") {
+        whereClause.device = { type: query };
+    }
+
+  try {
+    const sales = await prisma.sale.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        createdAt: true,
+        device: { select: { type: true, price: true } },
+        buyer: {
+          select: {
+            user: {
+              select: {
+                profile: { select: { lastname: true, firstname: true } },
+              },
+            },
+          },
+        },
+      },
+      skip,
+      take: pageSize,
+      orderBy: { createdAt: "desc" },
+    });
+
+    const total = await prisma.sale.count({ where: whereClause });
+
+    return { sales, total };
+  } catch (error) {
+    console.error("Error querying sales:", error);
+    throw error;
+  }
+};

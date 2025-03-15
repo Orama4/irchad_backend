@@ -181,7 +181,7 @@ main()
   });
 
   */
-
+/*
 
   import { PrismaClient } from "@prisma/client";
 import { faker } from "@faker-js/faker";
@@ -227,6 +227,49 @@ main()
   .catch((e) => {
     console.error(e);
     //process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });*/
+
+  import { PrismaClient } from "@prisma/client";
+import { faker } from "@faker-js/faker";
+
+const prisma = new PrismaClient();
+
+async function main() {
+  // Fetch all users
+  const users = await prisma.user.findMany();
+
+  if (users.length === 0) {
+    console.error("No users found. Please seed users first.");
+    return;
+  }
+
+  // Create random deciders
+  for (let i = 0; i < 10; i++) {
+    // Pick a random user
+    const randomUser = faker.helpers.arrayElement(users);
+
+    // Create a decider
+    await prisma.decider.create({
+      data: {
+        user: {
+          connect: { id: randomUser.id }, // Connect to a random user
+        },
+      },
+    });
+
+    console.log(`Created Decider ${i + 1} for User ID: ${randomUser.id}`);
+  }
+
+  console.log("Deciders seeding completed successfully!");
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+   // process.exit(1);s
   })
   .finally(async () => {
     await prisma.$disconnect();

@@ -12,8 +12,7 @@ import dashboardRoutes from "./routes/dashboardRoutes";
 dotenv.config();
 
 export const app = express();
-const port = process.env.PORT || 5001;
-
+const PORT = process.env.NODE_ENV === "test" ? 0 : 5001; 
 // Middlewares
 app.use(express.json());
 app.use(cors());
@@ -46,8 +45,8 @@ app.get("/getSales", (req, res) => {
 
 
 // Démarrage contrôlé du serveur
-export const server = app.listen(port, () => {
-  console.log(`Stats service actif sur http://localhost:${port}`);
+export const server = app.listen(PORT, () => {
+  console.log(`Stats service actif sur http://localhost:${PORT}`);
 });
 
 //export { app, server };

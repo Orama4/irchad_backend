@@ -87,7 +87,7 @@ export const getSales = async (
   console.log("Building query with:", { skip, pageSize, query });
 
   // Only apply device type filter if query is provided and not "all"
-  const whereClause = {};
+  const whereClause :any = {};
     if (query && query !== "all") {
         whereClause.device = { type: query };
     }

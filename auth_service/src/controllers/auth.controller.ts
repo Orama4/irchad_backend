@@ -111,7 +111,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       email: user.email,
       role: user.role || undefined,
     };
-
     const token = jwt.sign(tokenPayload, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN,
     });

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 
-export const getSalesKPIs = async (req: Request, res: Response) => {
+export const getSalesKPIs = async (req: Request, res: Response) : Promise<void> => {
   try {
     const totalSales = await prisma.sale.count();
     const salesWithDevices = await prisma.sale.findMany({

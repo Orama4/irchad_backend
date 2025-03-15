@@ -1,10 +1,9 @@
 {
   "name": "stats_service",
-  "type":"module",
+  "type": "commonjs",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "type": "module",
   "scripts": {
     "start": "ts-node src/index.ts",
     "build": "tsc",
@@ -14,7 +13,6 @@
     "seed": "ts-node scripts/seed.ts"
   },
   "keywords": [],
-  "type": "commonjs",
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -23,6 +21,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
     "nodemon": "^3.1.9"
   },
   "devDependencies": {
@@ -33,6 +32,7 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.13.10",
     "@types/supertest": "^6.0.2",

@@ -92,7 +92,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const { email, password } = req.body as LoginRequest;
 
     // Find user
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email },include:{
+      Profile:true
+    }});
     if (!user) {
       res.status(401).json({ message: "Invalid credentials" });
       return;
@@ -106,14 +108,17 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     }
 
     // Generate token
-    const tokenPayload: TokenPayload = {
+    const tokenPayload: any = {
       userId: user.id,
       email: user.email,
+      first_name:user?.Profile?.firstname,
+      last_name:user?.Profile?.lastname,
       role: user.role || undefined,
     };
     const token = jwt.sign(tokenPayload, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN,
     });
+    console.log(user)
 
     res.status(200).json({
       message: "Login successful",
@@ -124,8 +129,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         role: user.role,
       },
     });
-  } catch (error) {
-    console.error("Login error:", error);
+  } catch (error:any) {
+    console.error("Login error:", error?.message);
     res.status(500).json({ message: "An error occurred during login" });
   }
 };

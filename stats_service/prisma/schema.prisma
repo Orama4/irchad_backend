@@ -32,6 +32,7 @@ model Profile {
   lastname    String?
   phonenumber String?
   address     String? @db.VarChar(255)
+  id          Int     @id @default(autoincrement())
   user        User    @relation(fields: [userId], references: [id])
 }
 
@@ -231,8 +232,8 @@ enum Role {
 
 enum DeviceType {
   Ceinture
-  // Canne_Augmenté
-  // Lunnettes_Connectées
+  Canne_Augment_       @map("Canne_Augmenté")
+  Lunnettes_Connect_es @map("Lunnettes_Connectées")
 }
 
 enum DeviceStatus {

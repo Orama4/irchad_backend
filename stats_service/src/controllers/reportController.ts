@@ -34,13 +34,11 @@ export const generateUsageReport = async (req: Request, res: Response) => {
     );
   } catch (error) {
     console.error("Error generating usage report:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to generate report",
-        error: error,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to generate report",
+      error: error,
+    });
   }
 };
 
@@ -141,5 +139,41 @@ const exportReport = async (
       message: `Failed to export as ${format}`,
       error: error,
     });
+  }
+};
+
+export const generateZoneReport = async (req: Request, res: Response) => {
+  try {
+    const { startDate, endDate, format } = req.query;
+
+    // Parse dates if provided
+    const parsedStartDate = startDate
+      ? new Date(startDate as string)
+      : undefined;
+    const parsedEndDate = endDate ? new Date(endDate as string) : undefined;
+
+    // Generate report data
+    const reportData = await reportService.generateZoneStats(
+      parsedStartDate,
+      parsedEndDate
+    );
+
+    // Return JSON if no format specified
+    if (!format) {
+      res.json({ success: true, data: reportData });
+      return;
+    }
+
+    // Otherwise export in requested format
+    await exportReport(reportData, "Zones_Report", format as string, res);
+  } catch (error) {
+    console.error("Error generating zones report:", error);
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Failed to generate report",
+        error: error,
+      });
   }
 };

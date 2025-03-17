@@ -1,4 +1,5 @@
 import { prisma } from "../lib/prisma";
+import { Prisma } from "@prisma/client";
 import ExcelJS from "exceljs";
 import { Parser } from "json2csv";
 import PDFDocument from "pdfkit";
@@ -6,6 +7,81 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 class ReportService {
+  async generateZoneStats(startDate?: Date, endDate?: Date) {
+    const dateFilter = this.createDateFilter(startDate, endDate);
+
+    // Get total zones count
+    const totalZones = await prisma.zone.count({
+      where: dateFilter ? { createdAt: dateFilter } : {},
+    });
+
+    // Get zones by type
+    const zonesByType = await prisma.zone.groupBy({
+      by: ["type"],
+      _count: {
+        id: true,
+      },
+    });
+
+    // Get zones created over time
+    const zonesCreatedOverTime = await prisma.$queryRaw<
+      { month: Date; count: number }[]
+    >`
+      SELECT 
+        DATE_TRUNC('month', "createdAt") as month,
+        COUNT(*)::integer as count
+      FROM "Zone"
+      ${
+        dateFilter
+          ? Prisma.sql`WHERE "createdAt" BETWEEN ${startDate} AND ${endDate}`
+          : Prisma.empty
+      }
+      GROUP BY DATE_TRUNC('month', "createdAt")
+      ORDER BY month ASC
+    `;
+    // Get zones by environment
+    const zonesByEnvironment = await prisma.zone.groupBy({
+      by: ["envId"],
+      _count: {
+        id: true,
+      },
+    });
+
+    const environmentDetails = await prisma.environment.findMany({
+      where: {
+        id: {
+          in: zonesByEnvironment.map((z) => z.envId),
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    });
+
+    const environmentMap: Record<number, string> = environmentDetails.reduce(
+      (acc, env) => {
+        acc[env.id] = env.name;
+        return acc;
+      },
+      {} as Record<number, string>
+    );
+
+    return {
+      totalZones,
+      zonesByType: zonesByType.map((item) => ({
+        type: item.type,
+        count: item._count.id,
+      })),
+      zonesCreatedOverTime,
+      zonesByEnvironment: zonesByEnvironment.map((item) => ({
+        environmentId: item.envId,
+        environmentName:
+          environmentMap[item.envId] || `Environment ${item.envId}`,
+        count: item._count.id,
+      })),
+    };
+  }
   // Generate system usage statistics
   async generateUsageStats(startDate?: Date, endDate?: Date) {
     const dateFilter = this.createDateFilter(startDate, endDate);
@@ -105,20 +181,20 @@ class ReportService {
 
     // Get monthly sales trend
     const monthlySalesTrend = await prisma.$queryRaw`
-      SELECT 
-        DATE_TRUNC('month', "createdAt") as month,
-        COUNT(*) as sales_count,
-        SUM(d.price) as revenue
-      FROM "Sale" s
-      JOIN "Device" d ON s."deviceId" = d.id
-      ${
-        dateFilter
-          ? `WHERE s."createdAt" >= ${startDate} AND s."createdAt" <= ${endDate}`
-          : ""
-      }
-      GROUP BY DATE_TRUNC('month', "createdAt")
-      ORDER BY month ASC
-    `;
+    SELECT 
+      DATE_TRUNC('month', s."createdAt") as month,
+      COUNT(*)::integer as sales_count,
+      COALESCE(SUM(d.price), 0)::integer as revenue
+    FROM "Sale" s
+    JOIN "Device" d ON s."deviceId" = d.id
+    ${
+      dateFilter
+        ? Prisma.sql`WHERE s."createdAt" BETWEEN ${startDate} AND ${endDate}`
+        : Prisma.empty
+    }
+    GROUP BY DATE_TRUNC('month', s."createdAt")
+    ORDER BY month ASC
+  `;
 
     return {
       totalSales,
@@ -148,35 +224,47 @@ class ReportService {
     return null;
   }
 
-  
   // Export data to Excel format
   async exportToExcel(data: any, reportName: string): Promise<string> {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet("Report");
 
     // Function to flatten nested objects
-    const flattenObject = (obj: any, prefix = "") => {
-      return Object.keys(obj).reduce((acc: any, k) => {
-        const pre = prefix.length ? `${prefix}.` : "";
-        if (
-          typeof obj[k] === "object" &&
-          obj[k] !== null &&
-          !Array.isArray(obj[k])
-        ) {
-          Object.assign(acc, flattenObject(obj[k], pre + k));
-        } else if (Array.isArray(obj[k])) {
-          // For arrays, we'll just convert to string to keep it simple
-          acc[pre + k] = JSON.stringify(obj[k]);
-        } else {
-          acc[pre + k] = obj[k];
-        }
-        return acc;
-      }, {});
-    };
+   const flattenObject = (obj: any, prefix = "") => {
+     return Object.keys(obj).reduce((acc: any, k) => {
+       const pre = prefix.length ? `${prefix}.` : "";
+       const value = obj[k];
+       if (
+         typeof value === "object" &&
+         value !== null &&
+         !Array.isArray(value)
+       ) {
+         Object.assign(acc, flattenObject(value, pre + k));
+       } else if (Array.isArray(value)) {
+         // Check if the array contains objects
+         if (value.every((item) => typeof item === "object" && item !== null)) {
+           // Convert each object into a comma-separated list and join with newlines
+           acc[pre + k] = value
+             .map((item: any) =>
+               Object.entries(item)
+                 .map(([ik, iv]) => `${ik}: ${iv}`)
+                 .join(", ")
+             )
+             .join("\n");
+         } else {
+           // For arrays of primitives, join with commas
+           acc[pre + k] = value.join(", ");
+         }
+       } else {
+         acc[pre + k] = value;
+       }
+       return acc;
+     }, {});
+   };
+
 
     // Handle different data structures
     if (Array.isArray(data)) {
-      // If it's an array, use the first item to extract columns
       if (data.length > 0) {
         const firstItem = flattenObject(data[0]);
         const columns = Object.keys(firstItem).map((key) => ({
@@ -190,7 +278,6 @@ class ReportService {
         worksheet.addRows(rows);
       }
     } else {
-      // If it's an object, create separate sections
       const flatData = flattenObject(data);
       const rows = Object.entries(flatData).map(([key, value]) => ({
         key,
@@ -205,11 +292,10 @@ class ReportService {
       worksheet.addRows(rows);
     }
 
-    // Generate a temporary file path
     const filePath = path.join(os.tmpdir(), `${reportName}_${Date.now()}.xlsx`);
 
-    // Write to file
-    await workbook.xlsx.writeFile(filePath);
+    // Use non-null assertion to ensure workbook.xlsx is defined
+    await workbook.xlsx!.writeFile(filePath);
 
     return filePath;
   }
@@ -255,6 +341,9 @@ class ReportService {
         csvContent = parser.parse(rows);
       }
 
+      // Prepend BOM to ensure proper encoding in Excel
+      csvContent = "\uFEFF" + csvContent;
+
       // Write to file
       const filePath = path.join(
         os.tmpdir(),
@@ -273,116 +362,158 @@ class ReportService {
     // Generate a temporary file path
     const filePath = path.join(os.tmpdir(), `${reportName}_${Date.now()}.pdf`);
 
-    // Create PDF document
+    // Create PDF document with margin settings
     const doc = new PDFDocument({ margin: 50 });
     const stream = fs.createWriteStream(filePath);
-
     doc.pipe(stream);
 
-    // Add title
-    doc.fontSize(20).text(`${reportName} Report`, { align: "center" });
+    // Helper function to format Date objects
+    const formatDate = (date: Date): string => {
+      return new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        year: "numeric",
+      }).format(date);
+    };
+
+    // Title and header section
+    doc
+      .font("Helvetica-Bold")
+      .fontSize(22)
+      .text(`${reportName} Report`, { align: "center" });
     doc.moveDown();
     doc
+      .font("Helvetica")
       .fontSize(12)
+      .fillColor("gray")
       .text(`Generated on: ${new Date().toLocaleString()}`, {
         align: "center",
       });
+    doc.moveDown(1);
+    // Draw a horizontal line for separation
+    doc
+      .moveTo(50, doc.y)
+      .lineTo(doc.page.width - 50, doc.y)
+      .strokeColor("black")
+      .stroke();
     doc.moveDown(2);
 
-    // Function to recursively add content to PDF
+    // Recursive function to add content with improved formatting
     const addContentToPDF = (obj: any, depth = 0) => {
-      const indent = "  ".repeat(depth);
+      // Use pixel indentation for clarity
+      const indent = 20 * depth;
 
       Object.entries(obj).forEach(([key, value]) => {
+        // If value is a Date, format it
+        if (value instanceof Date) {
+          value = formatDate(value);
+        }
+
         if (value === null || value === undefined) {
-          doc.text(`${indent}${key}: N/A`);
+          doc
+            .font("Helvetica")
+            .fontSize(12)
+            .fillColor("black")
+            .text(`${key}: N/A`, { indent });
+          doc.moveDown(0.5);
         } else if (typeof value === "object" && !Array.isArray(value)) {
-          doc.fontSize(14 - depth).text(`${indent}${key}:`);
+          doc
+            .font("Helvetica-Bold")
+            .fontSize(14 - depth)
+            .fillColor("black")
+            .text(`${key}:`, { indent });
           doc.moveDown(0.5);
           addContentToPDF(value, depth + 1);
           doc.moveDown(0.5);
         } else if (Array.isArray(value)) {
-          doc.fontSize(14 - depth).text(`${indent}${key}:`);
+          doc
+            .font("Helvetica-Bold")
+            .fontSize(14 - depth)
+            .fillColor("black")
+            .text(`${key}:`, { indent });
           doc.moveDown(0.5);
 
           if (value.length === 0) {
-            doc.text(`${indent}  No data`);
+            doc
+              .font("Helvetica")
+              .fontSize(12)
+              .text(`No data`, { indent: indent + 20 });
           } else if (typeof value[0] === "object") {
-            // Table header
+            // Render table headers and rows
             const headers = Object.keys(value[0]);
+            const startX = 50 + indent;
             let yPos = doc.y;
-            let maxY = yPos;
 
-            // Check if we need a new page for the table
-            const estimatedHeight = (value.length + 1) * 20; // rough estimate
-            if (doc.y + estimatedHeight > doc.page.height - 100) {
-              doc.addPage();
-              yPos = doc.y;
-              maxY = yPos;
-            }
+            // Calculate column width based on available width
+            const availableWidth = doc.page.width - startX - 50;
+            const colWidth = availableWidth / headers.length;
 
-            // Simple table rendering
-            const startX = 50 + depth * 10;
-            const colWidth =
-              (doc.page.width - 100 - depth * 20) / headers.length;
-
-            // Draw header
+            // Render header row with bold font
+            doc.font("Helvetica-Bold").fontSize(12);
             headers.forEach((header, i) => {
               doc.text(header, startX + i * colWidth, yPos, {
                 width: colWidth,
                 align: "left",
               });
             });
-
             yPos += 20;
             doc
               .moveTo(startX, yPos)
-              .lineTo(startX + colWidth * headers.length, yPos)
+              .lineTo(startX + availableWidth, yPos)
               .stroke();
-            yPos += 5;
 
-            // Draw rows
+            // Render each data row
+            doc.font("Helvetica").fontSize(12);
             value.forEach((row: any) => {
+              yPos += 10; // Padding before each row
               headers.forEach((header, i) => {
-                const cellValue =
-                  row[header] !== null && row[header] !== undefined
-                    ? row[header].toString()
-                    : "N/A";
-                doc.text(cellValue, startX + i * colWidth, yPos, {
+                let cellValue = row[header];
+                if (cellValue instanceof Date) {
+                  cellValue = formatDate(cellValue);
+                }
+                if (cellValue === null || cellValue === undefined) {
+                  cellValue = "N/A";
+                }
+                doc.text(cellValue.toString(), startX + i * colWidth, yPos, {
                   width: colWidth,
                   align: "left",
                 });
               });
               yPos += 20;
-
-              if (yPos > maxY) maxY = yPos;
-
-              // Check if we need a new page
+              // Add a new page if near the bottom
               if (yPos > doc.page.height - 50) {
                 doc.addPage();
                 yPos = 50;
-                maxY = yPos;
               }
             });
-
-            doc.y = maxY + 10;
+            doc.moveDown(1);
           } else {
-            // Simple array
+            // For arrays of primitives, list each item
             value.forEach((item: any, index: number) => {
-              doc.text(`${indent}  ${index + 1}. ${item}`);
+              doc
+                .font("Helvetica")
+                .fontSize(12)
+                .text(`${index + 1}. ${item}`, { indent: indent + 20 });
             });
           }
           doc.moveDown(0.5);
         } else {
-          doc.text(`${indent}${key}: ${value}`);
+          doc
+            .font("Helvetica")
+            .fontSize(12)
+            .fillColor("black")
+            .text(`${key}: ${value}`, { indent });
+          doc.moveDown(0.5);
         }
       });
     };
 
-    // Add content based on data type
+    // Process the data – if it’s an array, iterate each item
     if (Array.isArray(data)) {
       data.forEach((item, index) => {
-        doc.fontSize(16).text(`Item ${index + 1}:`);
+        doc
+          .font("Helvetica-Bold")
+          .fontSize(16)
+          .text(`Item ${index + 1}:`, { underline: true });
         doc.moveDown(0.5);
         addContentToPDF(item);
         doc.moveDown();
@@ -391,7 +522,7 @@ class ReportService {
       addContentToPDF(data);
     }
 
-    // Finalize PDF and close the stream
+    // Finalize the PDF file and close the stream
     doc.end();
 
     return new Promise((resolve, reject) => {
@@ -400,5 +531,6 @@ class ReportService {
     });
   }
 }
+
 
 export default new ReportService();

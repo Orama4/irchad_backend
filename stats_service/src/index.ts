@@ -8,6 +8,7 @@ import deviceRoutes from "./routes/deviceRoutes";
 
 import saleRouter from "./routes/saleRoutes"
 import dashboardRoutes from "./routes/dashboardRoutes";
+import reportRoutes from "./routes/reportRoutes"; 
 // Configuration des variables d'environnement
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use("/zones", zoneRouter);
 
 app.use('/sales',saleRouter);
 
+app.use("/reports", reportRoutes);
 
 
 // Route de test

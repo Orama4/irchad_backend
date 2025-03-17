@@ -1,3 +1,4 @@
+//reportController.ts file is used to handle the report generation requests. It uses the reportService to generate the reports and exports them in the requested format.
 import { Request, Response } from "express";
 import reportService from "../services/reportService";
 import { $Enums } from "@prisma/client";

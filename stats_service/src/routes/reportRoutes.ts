@@ -1,4 +1,4 @@
-// stats_service/src/routes/reportRoutes.ts
+// reportRoutes.ts file is used to define the routes for the report generation endpoints. It uses the reportController to handle the requests and generate the reports.
 import express from "express";
 import {
   generateUsageReport,

@@ -48,3 +48,5 @@ prisma/generated
 
 # VS Code settings
 .vscode
+
+venv/

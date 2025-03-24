@@ -4,8 +4,18 @@ import paho.mqtt.client as mqtt
 import ssl
 import uuid
 import time
-from app.config import MQTT_BROKER, MQTT_PORT, MQTT_USERNAME, MQTT_PASSWORD, MQTT_TOPIC_REQUEST, MQTT_TOPIC_RESPONSE, MQTT_CLIENT_ID, MQTT_KEEPALIVE, MQTT_TOPIC_DISTANCE
 from app.utils.shared_state import shared_state
+from app.config import settings
+
+MQTT_BROKER = settings.MQTT_BROKER
+MQTT_PORT = settings.MQTT_PORT
+MQTT_USERNAME = settings.MQTT_USERNAME
+MQTT_PASSWORD = settings.MQTT_PASSWORD
+MQTT_TOPIC_REQUEST = settings.MQTT_TOPIC_REQUEST
+MQTT_TOPIC_RESPONSE = settings.MQTT_TOPIC_RESPONSE
+MQTT_TOPIC_DISTANCE = settings.MQTT_TOPIC_DISTANCE
+MQTT_CLIENT_ID = settings.MQTT_CLIENT_ID
+MQTT_KEEPALIVE = settings.MQTT_KEEPALIVE
 
 latest_message = None
 

@@ -1,6 +1,5 @@
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "windows"]
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -8,114 +7,62 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                  Int                 @id @default(autoincrement())
-  email               String              @unique @db.VarChar(100)
-  password            String              @db.VarChar(255)
-  role                Role?
-  admin               Admin?
-  commercial          Commercial?
-  decider             Decider?
-  endUser             EndUser?
-  envUsers            EnvUser[]
-  helper              Helper?
-  logs                Log[]
-  maintainer          Maintainer?
-  notifications       Notification[]
-  profile             Profile?
-  userDeviceHistories UserDeviceHistory[]
-}
-
-model Profile {
-  userId      Int     @unique
-  firstname   String?
-  lastname    String?
-  phonenumber String?
-  address     String? @db.VarChar(255)
-  user        User    @relation(fields: [userId], references: [id])
-}
-
 model Admin {
   id     Int  @id @default(autoincrement())
   userId Int  @unique
   role   Role
-  user   User @relation(fields: [userId], references: [id])
-}
-
-model EndUser {
-  id           Int           @id @default(autoincrement())
-  helperId     Int?
-  lastPos      Json?
-  userId       Int           @unique
-  status       String
-  createdAt    DateTime      @default(now())
-  devices      Device[]
-  helper       Helper?       @relation(fields: [helperId], references: [id])
-  user         User          @relation(fields: [userId], references: [id])
-  helpRequests HelpRequest[]
-  mySales      Sale[]
-}
-
-model Helper {
-  id           Int           @id @default(autoincrement())
-  userId       Int           @unique
-  endUsers     EndUser[]
-  helpRequests HelpRequest[]
-  user         User          @relation(fields: [userId], references: [id])
+  User   User @relation(fields: [userId], references: [id])
 }
 
 model Commercial {
   id     Int  @id @default(autoincrement())
   userId Int  @unique
-  user   User @relation(fields: [userId], references: [id])
-}
-
-model Maintainer {
-  id            Int            @id @default(autoincrement())
-  userId        Int            @unique
-  interventions Intervention[]
-  user          User           @relation(fields: [userId], references: [id])
+  User   User @relation(fields: [userId], references: [id])
 }
 
 model Decider {
   id     Int  @id @default(autoincrement())
   userId Int  @unique
-  user   User @relation(fields: [userId], references: [id])
+  User   User @relation(fields: [userId], references: [id])
 }
 
 model Device {
-  id                  Int                 @id @default(autoincrement())
-  type                String
-  version             String              @db.VarChar(255)
-  macAdr              String?             @db.VarChar(255)
-  status              DeviceStatus
-  battery             Int
-  lastPos             Json?
-  price               Int?
-  createdAt           DateTime            @default(now())
-  userId              Int?
-  user                EndUser?            @relation(fields: [userId], references: [id])
-  interventions       Intervention[]
-  sales               Sale[]
-  userDeviceHistories UserDeviceHistory[]
+  id                Int                 @id @default(autoincrement())
+  type              String
+  version           String              @db.VarChar(255)
+  macAdr            String?             @db.VarChar(255)
+  status            DeviceStatus
+  battery           Int
+  lastPos           Json?
+  price             Int?
+  createdAt         DateTime            @default(now())
+  userId            Int?
+  EndUser           EndUser?            @relation(fields: [userId], references: [id])
+  Intervention      Intervention[]
+  Sale              Sale[]
+  UserDeviceHistory UserDeviceHistory[]
 }
 
-model Notification {
-  id        Int      @id @default(autoincrement())
-  content   String   @db.VarChar(255)
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
+model EndUser {
+  id          Int           @id @default(autoincrement())
+  helperId    Int?
+  lastPos     Json?
+  userId      Int           @unique
+  status      String
+  createdAt   DateTime      @default(now())
+  Device      Device[]
+  Helper      Helper?       @relation(fields: [helperId], references: [id])
+  User        User          @relation(fields: [userId], references: [id])
+  HelpRequest HelpRequest[]
+  Sale        Sale[]
 }
 
-model UserDeviceHistory {
-  id       Int      @id @default(autoincrement())
-  deviceId Int
-  userId   Int
-  useDate  DateTime @default(now())
-  device   Device   @relation(fields: [deviceId], references: [id])
-  user     User     @relation(fields: [userId], references: [id])
+model EnvUser {
+  id          Int         @id @default(autoincrement())
+  userId      Int
+  envId       Int
+  Environment Environment @relation(fields: [envId], references: [id])
+  User        User        @relation(fields: [userId], references: [id])
 }
 
 model Environment {
@@ -126,18 +73,141 @@ model Environment {
   pathCartographie String      @db.VarChar(255)
   createdAt        DateTime    @default(now())
   scale            Int
-  envUsers         EnvUser[]
-  routes           Itinerary[]
-  obstacles        Obstacle[]
-  zones            Zone[]
+  EnvUser          EnvUser[]
+  Itinerary        Itinerary[]
+  Obstacle         Obstacle[]
+  Zone             Zone[]
 }
 
-model EnvUser {
+model HelpRequest {
+  id       Int     @id @default(autoincrement())
+  userId   Int
+  helperId Int
+  Helper   Helper  @relation(fields: [helperId], references: [id])
+  EndUser  EndUser @relation(fields: [userId], references: [id])
+}
+
+model Helper {
+  id          Int           @id @default(autoincrement())
+  userId      Int           @unique
+  EndUser     EndUser[]
+  HelpRequest HelpRequest[]
+  User        User          @relation(fields: [userId], references: [id])
+}
+
+model Intervention {
+  id           Int              @id @default(autoincrement())
+  type         InterventionType
+  deviceId     Int
+  maintainerId Int
+  isRemote     Boolean
+  planDate     DateTime
+  Device       Device           @relation(fields: [deviceId], references: [id])
+  Maintainer   Maintainer       @relation(fields: [maintainerId], references: [id])
+}
+
+model Itinerary {
   id          Int         @id @default(autoincrement())
-  userId      Int
+  startPoint  Json
+  endPoint    Json
   envId       Int
-  environment Environment @relation(fields: [envId], references: [id])
-  user        User        @relation(fields: [userId], references: [id])
+  Environment Environment @relation(fields: [envId], references: [id])
+}
+
+model KPI {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+model Log {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  createdAt DateTime @default(now())
+  details   String   @db.VarChar(255)
+  User      User     @relation(fields: [userId], references: [id])
+}
+
+model Maintainer {
+  id           Int            @id @default(autoincrement())
+  userId       Int            @unique
+  Intervention Intervention[]
+  User         User           @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  content   String   @db.VarChar(255)
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  userId    Int
+  User      User     @relation(fields: [userId], references: [id])
+}
+
+model Obstacle {
+  id          Int         @id @default(autoincrement())
+  envId       Int
+  name        String      @db.VarChar(50)
+  description String      @db.VarChar(255)
+  cords       Json
+  Environment Environment @relation(fields: [envId], references: [id])
+}
+
+model POI {
+  id          Int         @id @default(autoincrement())
+  zoneId      Int
+  name        String      @db.VarChar(50)
+  category    POICategory
+  description String      @db.VarChar(255)
+  location    Json
+  Zone        Zone        @relation(fields: [zoneId], references: [id])
+}
+
+model Profile {
+  userId      Int     @unique
+  firstname   String?
+  lastname    String?
+  phonenumber String?
+  address     String? @db.VarChar(255)
+  User        User    @relation(fields: [userId], references: [id])
+}
+
+model Sale {
+  id        Int      @id @default(autoincrement())
+  deviceId  Int
+  buyerId   Int
+  createdAt DateTime @default(now())
+  EndUser   EndUser  @relation(fields: [buyerId], references: [userId])
+  Device    Device   @relation(fields: [deviceId], references: [id])
+}
+
+model User {
+  id                Int                 @id @default(autoincrement())
+  email             String              @unique @db.VarChar(100)
+  password          String              @db.VarChar(255)
+  role              Role?
+  Admin             Admin?
+  Commercial        Commercial?
+  Decider           Decider?
+  EndUser           EndUser?
+  EnvUser           EnvUser[]
+  Helper            Helper?
+  Log               Log[]
+  Maintainer        Maintainer?
+  Notification      Notification[]
+  Profile           Profile?
+  UserDeviceHistory UserDeviceHistory[]
+}
+
+model UserDeviceHistory {
+  id       Int      @id @default(autoincrement())
+  deviceId Int
+  userId   Int
+  useDate  DateTime @default(now())
+  Device   Device   @relation(fields: [deviceId], references: [id])
+  User     User     @relation(fields: [userId], references: [id])
 }
 
 model Zone {
@@ -149,90 +219,8 @@ model Zone {
   icon        String      @db.VarChar(255)
   cords       Json
   createdAt   DateTime    @default(now())
-  pois        POI[]
-  environment Environment @relation(fields: [envId], references: [id])
-}
-
-model POI {
-  id          Int         @id @default(autoincrement())
-  zoneId      Int
-  name        String      @db.VarChar(50)
-  category    POICategory
-  description String      @db.VarChar(255)
-  location    Json
-  zone        Zone        @relation(fields: [zoneId], references: [id])
-}
-
-model Obstacle {
-  id          Int         @id @default(autoincrement())
-  envId       Int
-  name        String      @db.VarChar(50)
-  description String      @db.VarChar(255)
-  cords       Json
-  environment Environment @relation(fields: [envId], references: [id])
-}
-
-model Itinerary {
-  id           Int         @id @default(autoincrement())
-  startPoint   Json
-  endPoint     Json
-  envId        Int
-  environement Environment @relation(fields: [envId], references: [id])
-}
-
-model HelpRequest {
-  id       Int     @id @default(autoincrement())
-  userId   Int
-  helperId Int
-  helper   Helper  @relation(fields: [helperId], references: [id])
-  user     EndUser @relation(fields: [userId], references: [id])
-}
-
-model Sale {
-  id        Int      @id @default(autoincrement())
-  deviceId  Int
-  buyerId   Int
-  createdAt DateTime @default(now())
-  buyer     EndUser  @relation(fields: [buyerId], references: [userId])
-  device    Device   @relation(fields: [deviceId], references: [id])
-}
-
-model Intervention {
-  id           Int              @id @default(autoincrement())
-  type         InterventionType
-  deviceId     Int
-  maintainerId Int
-  isRemote     Boolean
-  planDate     DateTime
-  device       Device           @relation(fields: [deviceId], references: [id])
-  maintainer   Maintainer       @relation(fields: [maintainerId], references: [id])
-}
-
-model Log {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  createdAt DateTime @default(now())
-  details   String   @db.VarChar(255)
-  user      User     @relation(fields: [userId], references: [id])
-}
-
-model KPI {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  value     Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-enum Role {
-  super
-  normal
-}
-
-enum DeviceType {
-  Ceinture
-  // Canne_Augmenté
-  // Lunnettes_Connectées
+  POI         POI[]
+  Environment Environment @relation(fields: [envId], references: [id])
 }
 
 enum DeviceStatus {
@@ -242,12 +230,15 @@ enum DeviceStatus {
   en_panne
 }
 
-enum ZoneType {
-  Zone_de_circulation
-  Zone_de_travail
-  Zone_de_service
-  Zone_interdite
-  Zone_danger
+enum DeviceType {
+  Ceinture
+  Canne_Augment_       @map("Canne_Augmenté")
+  Lunnettes_Connect_es @map("Lunnettes_Connectées")
+}
+
+enum InterventionType {
+  preventive
+  curative
 }
 
 enum POICategory {
@@ -256,7 +247,15 @@ enum POICategory {
   sortie
 }
 
-enum InterventionType {
-  preventive
-  curative
+enum Role {
+  super
+  normal
+}
+
+enum ZoneType {
+  Zone_de_circulation
+  Zone_de_travail
+  Zone_de_service
+  Zone_interdite
+  Zone_danger
 }

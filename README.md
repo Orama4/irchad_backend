@@ -1,4 +1,4 @@
-# Contributing to Orama_bacnkend
+# Contributing to Orama_backend
 
 
 ## Table of Contents

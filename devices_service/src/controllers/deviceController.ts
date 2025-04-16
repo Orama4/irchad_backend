@@ -1,2 +1,113 @@
-import { Request, Response } from "express";
+import { Request, Response } from 'express';
+import { 
+  getDeviceService,
+  getAllDevicesService, 
+  createDeviceService,
+  updateDeviceService,
+  deleteDeviceService,
+
+} from '../services/deviceService';
+
+  export const getAllDevices = async (req: Request, res: Response) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const pageSize = parseInt(req.query.pageSize as string) || 10;
+      
+      const { devices, total } = await getAllDevicesService(page,pageSize);
+      
+      res.status(200).json({
+        devices,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+        currentPage: page,
+      });
+    } catch (error) {
+      res.status(500).json({ 
+        success: false, 
+        error: (error as Error).message 
+      });
+    }
+  };
+
+
+  export const getDevice = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const deviceId = Number(req.params.id);
+    if (isNaN(deviceId)) {
+      res.status(400).json({ error: "Invalid device ID" });
+      return;
+    }
+
+    const device = await getDeviceService(deviceId);
+    res.json(device);
+  } catch (error) {
+    if (error instanceof Error && error.message === "Device not found") {
+      res.status(404).json({ error: error.message });
+    } else {
+      console.error('Error in getDevice:', error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+};
+
+  export const createDevice = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const device = await createDeviceService(req.body);
+      res.status(201).json(device);
+    } catch (error) {
+      console.error('Error in creating a device :', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'Failed to create device' 
+      });
+    }
+  };
+
+  export const updateDevice = async (req: Request, res: Response): Promise<void> => {
+    try {
+      
+      const deviceId = Number(req.params.id);
+      if (isNaN(deviceId)) {
+        res.status(400).json({ success: false, error: "Invalid device ID" });
+        return;
+      }
+  
+      const result = await updateDeviceService(deviceId, req.body);
+  
+      if (!result.success) {
+        res.status(404).json(result);
+        return;
+      }
+  
+      res.status(200).json({
+        success: true,
+        data: result.device,
+        message: "Device updated successfully"
+      });
+
+    } catch (error) {
+      console.error("Update error", error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'Failed to update device' 
+      });
+    }
+  };
+
+  export const deleteDevice = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const deviceId = Number(req.params.id);
+      if (isNaN(deviceId)) {
+        res.status(400).json({ success: false, error: "Invalid device ID" });
+        return;
+      }
+      const device = await deleteDeviceService(deviceId);
+      res.status(201).json(device);
+    } catch (error) {
+      console.error('Error in deleting the device:', error);
+      res.status(500).json({ 
+        error: error instanceof Error ? error.message : 'Failed to delete device' 
+      });
+    }
+  };
+
+
 

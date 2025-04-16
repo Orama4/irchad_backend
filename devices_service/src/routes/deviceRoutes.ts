@@ -1,16 +1,12 @@
 import express from "express";
-import { } from "../controllers/deviceController";
+import {getAllDevices,getDevice,createDevice,updateDevice, deleteDevice} from "../controllers/deviceController";
 import { authMiddleware } from "../middlewares/authMiddleware";
+import { create } from "domain";
+export const deviceRouter = express.Router();
 
 
-const router = express.Router();
-
-router.get("/",/*authMiddleware,*/);
-
-router.post("/");
-router.delete("/");
-router.put("/");
-
-     
-                                                                    
-export default router;
+deviceRouter.get("/",getAllDevices);//http://localhost:5002/devices?page=1&pageSize=5
+deviceRouter.get("/:id",getDevice);//http://localhost:5002/devices/3
+deviceRouter.post("/", createDevice);//http://localhost:5002/devices
+deviceRouter.put("/:id", updateDevice);//http://localhost:5002/devices/3
+deviceRouter.delete("/:id",deleteDevice);//http://localhost:5002/devices/3

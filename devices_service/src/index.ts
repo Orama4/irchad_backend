@@ -2,8 +2,9 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import {userRoutes} from "./routes/userRoutes"; 
+import { deviceRouter } from "./routes/deviceRoutes";
 //const prisma = new PrismaClient();
-import deviceRoutes from "./routes/deviceRoutes"; 
+
 
 
 // Configuration des variables d'environnement
@@ -20,7 +21,7 @@ app.use("/users", userRoutes);
 
 
 //Routes of devices service 
-app.use("/devices", deviceRoutes);
+app.use("/devices", deviceRouter);
 
 
 

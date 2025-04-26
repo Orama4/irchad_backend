@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "./node_modules/@prisma/client" // specify the output path
 }
 
 datasource db {
@@ -28,19 +29,20 @@ model Decider {
 
 model Device {
   id                Int                 @id @default(autoincrement())
-  type              String
-  version           String              @db.VarChar(255)
-  macAdr            String?             @db.VarChar(255)
-  status            DeviceStatus
-  battery           Int
-  lastPos           Json?
-  price             Int?
-  createdAt         DateTime            @default(now())
+  nom               String              @db.VarChar(255)        // New field: Nom
+  macAdresse        String              @db.VarChar(255)        // Renamed from macAdr
+  status            DeviceStatus                                // Updated enum
+  peripheriques     Json?                                        // New field: Les périphériques attaché
+  localisation      Json?                                        // New field: Localisation
+  cpuUsage          Float?                                       // New field: CPU usage
+  ramUsage          Float?                                       // New field: RAM usage
   userId            Int?
   EndUser           EndUser?            @relation(fields: [userId], references: [id])
-  Intervention      Intervention[]
   Sale              Sale[]
   UserDeviceHistory UserDeviceHistory[]
+  maintainerId  Int?         // New
+  Maintainer    Maintainer?  @relation(fields: [maintainerId], references: [id])
+  Intervention      Intervention[]
 }
 
 model EndUser {
@@ -97,13 +99,16 @@ model Helper {
 
 model Intervention {
   id           Int              @id @default(autoincrement())
-  type         InterventionType
   deviceId     Int
-  maintainerId Int
-  isRemote     Boolean
-  planDate     DateTime
   Device       Device           @relation(fields: [deviceId], references: [id])
+  maintainerId Int
   Maintainer   Maintainer       @relation(fields: [maintainerId], references: [id])
+  type         InterventionType
+  isRemote     Boolean?
+  planDate     DateTime?
+  Priority     String?          @db.VarChar(255)
+  description  String?          @db.VarChar(255)
+  status       InterventionStatus @default(en_panne)
 }
 
 model Itinerary {
@@ -135,6 +140,7 @@ model Maintainer {
   userId       Int            @unique
   Intervention Intervention[]
   User         User           @relation(fields: [userId], references: [id])
+  Devices      Device[]       // New: Devices managed by this maintainer
 }
 
 model Notification {
@@ -224,10 +230,11 @@ model Zone {
 }
 
 enum DeviceStatus {
-  connected
-  disconnected
-  under_maintenance
-  en_panne
+  Actif
+  Banne
+  Hors_service
+  Defectueux
+  En_maintenance
 }
 
 enum DeviceType {
@@ -239,6 +246,12 @@ enum DeviceType {
 enum InterventionType {
   preventive
   curative
+}
+
+enum InterventionStatus {
+  en_panne
+  en_progres
+  complete
 }
 
 enum POICategory {

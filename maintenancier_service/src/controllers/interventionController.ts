@@ -22,3 +22,44 @@ export const createIntervention = async (req: Request, res: Response) => {
     res.status(500).json({ error: "Failed to create intervention", details: error });
   }
 };
+
+
+export const getInterventionsByMaintainerId = async (req: Request, res: Response): Promise<void> => {
+  const maintainerId = parseInt(req.params.maintainerId);
+
+  try {
+    const interventions = await prisma.intervention.findMany({
+      where: {
+        maintainerId: maintainerId,
+        status: { in: ['en_panne', 'en_progres'] },
+      },
+    });
+
+    res.json(interventions);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'An error occurred while retrieving the interventions' });
+  }
+};
+
+
+//Historique
+export const getInterventionsByMaintainerIdAndDeviceId = async (req: Request, res: Response): Promise<void> => {
+  const maintainerId = parseInt(req.params.maintainerId);
+  const deviceId = parseInt(req.params.deviceId);
+
+  try {
+    const interventions = await prisma.intervention.findMany({
+      where: {
+        maintainerId: maintainerId,
+        deviceId: deviceId,
+        status: 'complete',
+      },
+    });
+
+    res.json(interventions);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'An error occurred while retrieving the interventions' });
+  }
+};

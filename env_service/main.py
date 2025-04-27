@@ -13,7 +13,7 @@ app = fastapi.FastAPI()
 
 # --- Model Loading and Startup (remains the same) ---
 MODEL_CONFIG = {
-    "floorplan_detector": "floorplan_detection_best.pt",
+    "floorplan_detector": "./models/floorplan_detection_best.pt",
 }
 loaded_models: Dict[str, YOLO] = {}
 

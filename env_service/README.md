@@ -13,8 +13,8 @@ This is a component of the Orama Backend that provides AI services.
 
 1. Clone the repository:
     ```bash
-    git clone <repository-url>
-    cd orama_backend/ai_service
+    git clone ....
+    cd orama_backend/env_service
     ```
 
 2. Set up a virtual environment with uv:
@@ -33,21 +33,44 @@ This is a component of the Orama Backend that provides AI services.
 
 4. Install dependencies:
     ```bash
-    uv pip install -r requirements.txt
+    uv sync 
     ```
 
 ### Running the Service
 
+Using Python directly:
 ```bash
 python main.py
 ```
+
+Using Uvicorn (recommended for FastAPI applications):
+```bash
+uvicorn main:app --reload
+```
+
+This will start the service with hot-reloading enabled for development.
 
 ## Development
 
 ### Installing Development Dependencies
 
 ```bash
-uv pip install -r requirements-dev.txt
+uv sync --dev
+```
+
+### Code Formatting
+
+This project uses [Ruff](https://github.com/charliermarsh/ruff) for code formatting and linting:
+
+```bash
+# Format all Python files
+ruff format .
+
+# Lint all Python files
+ruff check .
+
+# Automatically fix issues when possible
+ruff check --fix .
 ```
 
 ### Running Tests
@@ -60,12 +83,20 @@ pytest
 
 ```bash
 # Add a runtime dependency
-uv pip install <package-name>
-uv pip freeze > requirements.txt
+uv add <package-name>
 
 # Add a development dependency
-uv pip install <package-name>
-uv pip freeze > requirements-dev.txt
+uv add --dev <package-name>
+```
+
+### Removing Dependencies
+
+```bash
+# Remove a runtime dependency
+uv remove <package-name>
+
+# Remove a development dependency
+uv remove --dev <package-name>
 ```
 
 ## Environment Variables
@@ -80,11 +111,15 @@ DEBUG=True
 ## Project Structure
 
 ```
-ai_service/
-├── README.md           # This file
-├── main.py             # Entry point for the application
-├── requirements.txt    # Production dependencies
-└── requirements-dev.txt # Development dependencies
+env_service/
+├── README.md              # This file
+├── main.py                # Entry point for the application
+├── pyproject.toml         # Project configuration
+├── requirements.txt       # Production dependencies
+├── requirements-dev.txt   # Development dependencies
+├── uv.lock                # Lock file for dependencies
+└── models/                # Directory containing ML models
+    └── floorplan_detection_best.pt  # Model file
 ```
 
 ## License

@@ -13,6 +13,7 @@ model User {
   email               String              @unique @db.VarChar(100)
   password            String              @db.VarChar(255)
   role                Role?
+  lastLogin           DateTime?           // Added for tracking user activity 
   admin               Admin?
   commercial          Commercial?
   decider             Decider?
@@ -24,6 +25,7 @@ model User {
   notifications       Notification[]
   profile             Profile?
   userDeviceHistories UserDeviceHistory[]
+  securityIncidents   SecurityIncident[]
 }
 
 model Profile {
@@ -32,6 +34,7 @@ model Profile {
   lastname    String?
   phonenumber String?
   address     String? @db.VarChar(255)
+  id          Int     @id @default(autoincrement())
   user        User    @relation(fields: [userId], references: [id])
 }
 
@@ -92,6 +95,7 @@ model Device {
   battery             Int
   lastPos             Json?
   price               Int?
+  manufacturingCost   Float?              // Added for profit margin calculations
   createdAt           DateTime            @default(now())
   userId              Int?
   user                EndUser?            @relation(fields: [userId], references: [id])
@@ -231,8 +235,8 @@ enum Role {
 
 enum DeviceType {
   Ceinture
-  // Canne_Augmenté
-  // Lunnettes_Connectées
+  Canne_Augment_       @map("Canne_Augmenté")
+  Lunnettes_Connect_es @map("Lunnettes_Connectées")
 }
 
 enum DeviceStatus {
@@ -259,4 +263,25 @@ enum POICategory {
 enum InterventionType {
   preventive
   curative
+}
+
+// Added enum for security incident severity levels
+enum SeverityLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// Added new model for security incident tracking
+model SecurityIncident {
+  id          Int           @id @default(autoincrement())
+  title       String        @db.VarChar(100)
+  description String        @db.VarChar(255)
+  severity    SeverityLevel @default(LOW)
+  reportedAt  DateTime      @default(now())
+  resolvedAt  DateTime?
+  reportedBy  Int
+  user        User          @relation(fields: [reportedBy], references: [id])
+  isResolved  Boolean       @default(false)
 }

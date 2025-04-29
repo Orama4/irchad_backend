@@ -20,7 +20,25 @@ client.on("error", (err) => {
   console.error("❌ MQTT Connection error:", err.message);
 });
 
-export function subscribe(topic: string, callback: (payload: any) => void): void {
+const topicCallbacks: { [pattern: string]: (payload: any, topic: string) => void } = {};
+
+client.on("message", (receivedTopic, message) => {
+  Object.entries(topicCallbacks).forEach(([pattern, callback]) => {
+    const regex = new RegExp(
+      "^" + pattern.replace("+", "[^/]+").replace("#", ".+") + "$"
+    );
+    if (regex.test(receivedTopic)) {
+      try {
+        const payload = JSON.parse(message.toString());
+        callback(payload, receivedTopic);
+      } catch (error) {
+        console.error("❌ Failed to parse MQTT message:", error);
+      }
+    }
+  });
+});
+
+export function subscribe(topic: string, callback: (payload: any, topic: string) => void): void {
   client.subscribe(topic, (err) => {
     if (err) {
       console.error(`❌ Failed to subscribe to ${topic}:`, err.message);
@@ -29,16 +47,7 @@ export function subscribe(topic: string, callback: (payload: any) => void): void
     }
   });
 
-  client.on("message", (receivedTopic, message) => {
-    if (receivedTopic === topic) {
-      try {
-        const payload = JSON.parse(message.toString());
-        callback(payload);
-      } catch (error) {
-        console.error("❌ Failed to parse MQTT message:", error);
-      }
-    }
-  });
+  topicCallbacks[topic] = callback;
 }
 
 export function publish(topic: string, message: object): void {

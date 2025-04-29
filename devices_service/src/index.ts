@@ -38,6 +38,12 @@ subscribe(REQUEST_TOPIC, (payload) => {
 publish(RESPONSE_TOPIC, { message: "Hello from Node.js!" });
 
 
+subscribe("devices/+/status", (payload, topic) => {
+  const deviceId = topic.split("/")[1];
+  console.log(`📥 Status update from ${deviceId}:`, payload);
+
+});
+
 
 // Démarrage contrôlé du serveur
 export const server = app.listen(PORT, () => {

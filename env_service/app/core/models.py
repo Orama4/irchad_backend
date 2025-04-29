@@ -8,7 +8,7 @@ class Environment(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
     address = Column(String(255), nullable=False)
-    cords = Column(JSON, nullable=False)
+    cords = Column(JSON, nullable=True)
     pathCartographie = Column(String(255), nullable=False)
     createdAt = Column(DateTime, default=datetime.utcnow)
     scale = Column(Integer, nullable=True)

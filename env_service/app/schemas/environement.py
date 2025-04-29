@@ -15,3 +15,10 @@ class EnvironmentOut(EnvironmentCreate):
 
     class Config:
         orm_mode = True
+
+class EnvironmentUpdate(BaseModel):
+    name: Optional[str] = None
+    address: Optional[str] = None
+    cords: Optional[Any] = None
+    pathCartographie: Optional[str] = None
+    scale: Optional[int] = None

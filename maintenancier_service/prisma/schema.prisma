@@ -263,6 +263,11 @@ enum POICategory {
 enum Role {
   super
   normal
+  commercial
+  decider
+  endUser
+  helper
+  maintainer
 }
 
 enum ZoneType {
@@ -271,4 +276,11 @@ enum ZoneType {
   Zone_de_service
   Zone_interdite
   Zone_danger
+}
+
+model Otp {
+  id        Int      @id @default(autoincrement())
+  email     String   @db.VarChar(100)
+  otp       String   @db.VarChar(6) // Store OTP as a 6-digit string
+  expiresAt DateTime
 }

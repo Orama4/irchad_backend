@@ -28,15 +28,16 @@ model Decider {
 
 model Device {
   id                Int                 @id @default(autoincrement())
-  type              String
-  version           String              @db.VarChar(255)
-  macAdr            String?             @db.VarChar(255)
   status            DeviceStatus
-  battery           Int
-  lastPos           Json?
-  price             Int?
-  createdAt         DateTime            @default(now())
   userId            Int?
+  cpuUsage          Float?
+  localisation      Json?
+  macAdresse        String              @db.VarChar(255)
+  maintainerId      Int?
+  nom               String              @db.VarChar(255)
+  peripheriques     Json?
+  ramUsage          Float?
+  Maintainer        Maintainer?         @relation(fields: [maintainerId], references: [id])
   EndUser           EndUser?            @relation(fields: [userId], references: [id])
   Intervention      Intervention[]
   Sale              Sale[]
@@ -96,14 +97,17 @@ model Helper {
 }
 
 model Intervention {
-  id           Int              @id @default(autoincrement())
+  id           Int                @id @default(autoincrement())
   type         InterventionType
   deviceId     Int
   maintainerId Int
-  isRemote     Boolean
-  planDate     DateTime
-  Device       Device           @relation(fields: [deviceId], references: [id])
-  Maintainer   Maintainer       @relation(fields: [maintainerId], references: [id])
+  isRemote     Boolean?
+  planDate     DateTime?
+  Priority     String?            @db.VarChar(255)
+  description  String?            @db.VarChar(255)
+  status       InterventionStatus @default(en_panne)
+  Device       Device             @relation(fields: [deviceId], references: [id])
+  Maintainer   Maintainer         @relation(fields: [maintainerId], references: [id])
 }
 
 model Itinerary {
@@ -133,6 +137,7 @@ model Log {
 model Maintainer {
   id           Int            @id @default(autoincrement())
   userId       Int            @unique
+  Devices      Device[]
   Intervention Intervention[]
   User         User           @relation(fields: [userId], references: [id])
 }
@@ -223,11 +228,19 @@ model Zone {
   Environment Environment @relation(fields: [envId], references: [id])
 }
 
+model Otp {
+  id        Int      @id @default(autoincrement())
+  email     String   @db.VarChar(100)
+  otp       String   @db.VarChar(6)
+  expiresAt DateTime
+}
+
 enum DeviceStatus {
-  connected
-  disconnected
-  under_maintenance
-  en_panne
+  Actif
+  Banne
+  Hors_service
+  Defectueux
+  En_maintenance
 }
 
 enum DeviceType {
@@ -241,6 +254,12 @@ enum InterventionType {
   curative
 }
 
+enum InterventionStatus {
+  en_panne
+  en_progres
+  complete
+}
+
 enum POICategory {
   acceuil
   bureau
@@ -250,6 +269,11 @@ enum POICategory {
 enum Role {
   super
   normal
+  commercial
+  decider
+  endUser
+  helper
+  maintainer
 }
 
 enum ZoneType {

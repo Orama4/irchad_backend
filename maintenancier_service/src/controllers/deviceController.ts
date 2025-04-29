@@ -27,44 +27,6 @@ export const getDeviceHistory = async (req: Request, res: Response): Promise<voi
     }
 };
 
-/*export const getDeviceDiagnostic = async (req: Request, res: Response): Promise<void> => {
-  const { id } = req.params;
-
-  try {
-    const device = await prisma.device.findUnique({
-      where: { id: parseInt(id) },
-    });
-
-    if (!device) {
-      res.status(404).json({ error: 'Device not found' });
-      return; // Fix: Prevent further execution
-    }
-
-    const diagnostic = {
-      deviceId: device.id,
-      status: device.status,
-      battery: device.battery,
-      macAddress: device.macAdr,
-      lastKnownPosition: device.lastPos,
-      createdAt: device.createdAt,
-      simulatedErrors: simulateErrors(device),
-    };
-
-    res.status(200).json(diagnostic);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-};*/
-  
-// Helper function to simulate errors based on device data
-function simulateErrors(device: any): string[] {
-  const errors: string[] = [];
-  if (device.battery < 20) errors.push('battery_low');
-  if (!device.macAdr) errors.push('mac_address_missing');
-  if (!device.lastPos) errors.push('location_unknown');
-  return errors;
-}
 
 
 export const changeDeviceStatus = async (req: Request, res: Response): Promise<void> => {
@@ -168,6 +130,71 @@ export const getMaintainerDeviceStatsById = async (req: Request, res: Response):
     res.status(500).json({ message: 'An error occurred while retrieving device statistics' });
   }
 };
+
+
+export const getDeviceById = async (req: Request, res: Response): Promise<void> => {
+  const deviceId = parseInt(req.params.deviceId);
+  if (isNaN(deviceId)) {
+    res.status(400).json({ error: "Invalid device ID" });
+    return;
+  }
+
+  try {
+    const device = await prisma.device.findUnique({
+      where: { id: deviceId },
+      select: {
+        id: true,
+        nom: true,
+        macAdresse: true,
+        status: true,
+        peripheriques: true,
+        localisation: true,
+        cpuUsage: true,
+        ramUsage: true,
+      },
+    });
+
+    if (!device) {
+      res.status(404).json({ error: "Device not found" });
+      return;
+    }
+
+    res.status(200).json(device);
+  } catch (error) {
+    console.error("Error fetching device by ID:", error);
+    res.status(500).json({ error: "Failed to fetch device", details: error });
+  }
+};
+
+export const updateDeviceStatus = async (req: Request, res: Response): Promise<void> => {
+  const deviceId = parseInt(req.params.deviceId);
+  const { status } = req.body;
+
+  if (isNaN(deviceId)) {
+    res.status(400).json({ message: 'Invalid deviceId' });
+    return;
+  }
+
+  if (!status || !Object.values(DeviceStatus).includes(status)) {
+    res.status(400).json({
+      message: `Invalid status. Must be one of: ${Object.values(DeviceStatus).join(', ')}`,
+    });
+    return;
+  }
+
+  try {
+    const updatedDevice = await prisma.device.update({
+      where: { id: deviceId },
+      data: { status: status as DeviceStatus },
+    });
+
+    res.json(updatedDevice);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to update device status' });
+  }
+};
+
 
 
 

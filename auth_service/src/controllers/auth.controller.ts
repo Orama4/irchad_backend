@@ -107,20 +107,24 @@ console.log("Requested role:", role);
   }
 };
 
-
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body as LoginRequest;
 
     // Find user
-    const user = await prisma.user.findUnique({ where: { email },include:{
-      Profile:true
-    }});
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        Profile: true,
+        Maintainer: true, // Include Maintainer relation
+      },
+    });
+
     if (!user) {
       res.status(401).json({ message: "Invalid credentials" });
       return;
     }
-  
+
     // Check password
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
@@ -132,14 +136,15 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const tokenPayload: any = {
       userId: user.id,
       email: user.email,
-      first_name:user?.Profile?.firstname,
-      last_name:user?.Profile?.lastname,
+      first_name: user?.Profile?.firstname,
+      last_name: user?.Profile?.lastname,
       role: user.role || undefined,
+      maintainerId: user.Maintainer?.id, // Include maintainerId in the token payload
     };
+
     const token = jwt.sign(tokenPayload, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN,
     });
-    console.log(user)
 
     res.status(200).json({
       message: "Login successful",
@@ -148,9 +153,10 @@ export const login = async (req: Request, res: Response): Promise<void> => {
         id: user.id,
         email: user.email,
         role: user.role,
+        maintainerId: user.Maintainer?.id, // Include maintainerId in the response
       },
     });
-  } catch (error:any) {
+  } catch (error: any) {
     console.error("Login error:", error?.message);
     res.status(500).json({ message: "An error occurred during login" });
   }
@@ -443,11 +449,24 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
 
 export const deleteAccount = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = req.body.userId; // Use req.body for userId
+    const { userId } = req.body; // Extract userId from req.body
 
-    // Delete the user and associated data
-    await prisma.user.delete({
-      where: { id: userId },
+    // Start a transaction to ensure atomicity
+    await prisma.$transaction(async (prisma) => {
+      // Delete related records
+      await prisma.profile.deleteMany({ where: { userId } });
+      await prisma.admin.deleteMany({ where: { userId } });
+      await prisma.commercial.deleteMany({ where: { userId } });
+      await prisma.decider.deleteMany({ where: { userId } });
+      await prisma.endUser.deleteMany({ where: { userId } });
+      await prisma.helper.deleteMany({ where: { userId } });
+      await prisma.maintainer.deleteMany({ where: { userId } });
+      await prisma.log.deleteMany({ where: { userId } });
+      await prisma.notification.deleteMany({ where: { userId } });
+      await prisma.userDeviceHistory.deleteMany({ where: { userId } });
+
+      // Delete the user
+      await prisma.user.delete({ where: { id: userId } });
     });
 
     res.status(200).json({ message: "Account deleted successfully" });

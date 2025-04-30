@@ -258,7 +258,6 @@ export const getMonthlyActiveUsers = async (months: number = 6) => {
       );
 
       // Count active users (users who logged in during this month)
-      // This assumes you have a userActivity table or similar to track logins
       const activeUsersCount = await prisma.user.count({
         where: {
           lastLogin: {
@@ -286,13 +285,20 @@ export const getMonthlyActiveUsers = async (months: number = 6) => {
       });
     }
 
-    // Calculate trend (simple: comparing most recent month to previous month)
-    const trend =
-      monthlyStats.length >= 2
-        ? ((monthlyStats[0].activeUsers - monthlyStats[1].activeUsers) /
+    // Calculate trend - handle the case where previous month has 0 active users
+    let trend = 0;
+    if (monthlyStats.length >= 2) {
+      if (monthlyStats[1].activeUsers === 0) {
+        // If previous month had 0 users and current month has users, show 100% growth
+        trend = monthlyStats[0].activeUsers > 0 ? 100 : 0;
+      } else {
+        // Normal calculation when previous month had active users
+        trend =
+          ((monthlyStats[0].activeUsers - monthlyStats[1].activeUsers) /
             monthlyStats[1].activeUsers) *
-          100
-        : 0;
+          100;
+      }
+    }
 
     return {
       currentMAU: monthlyStats[0]?.activeUsers || 0,

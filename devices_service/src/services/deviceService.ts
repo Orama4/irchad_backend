@@ -38,14 +38,14 @@ const riskyDevices: RiskyDevices = {};
 
 // Thresholds for metrics
 const THRESHOLDS = {
-  temperature: 50, // °C
-  cpu_percent: 6, // %
-  ram_percent: 40, // %
+  temperature: 70, // °C
+  cpu_percent: 95, // %
+  ram_percent: 90, // %
 };
 
 // Time settings (in milliseconds)
-const HEARTBEAT_TIMEOUT = 1 * 60 * 1000; // 1 minutes
-const MONITOR_INTERVAL = 60 * 100;      // 1 minute
+const HEARTBEAT_TIMEOUT = 5 * 60 * 1000; // 5 minutes
+const MONITOR_INTERVAL = 60 * 10;    
 
 // Function to handle heartbeat messages
 const handleHeartbeatMessage = (deviceId: string, heartbeatData: HeartbeatData) => {

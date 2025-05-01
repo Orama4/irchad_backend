@@ -74,6 +74,7 @@ model Maintainer {
   id            Int            @id @default(autoincrement())
   userId        Int            @unique
   interventions Intervention[]
+  devices       Device[]       @relation("MaintainerToDevice")
   user          User           @relation(fields: [userId], references: [id])
 }
 
@@ -84,19 +85,21 @@ model Decider {
 }
 
 model Device {
-  id                  Int                 @id @default(autoincrement())
-  type                String
-  version             String              @db.VarChar(255)
-  macAdr              String?             @db.VarChar(255)
-  status              DeviceStatus?
-  lastPos             Json?
-  price               Int?
-  createdAt           DateTime            @default(now())
-  userId              Int?
-  user                EndUser?            @relation(fields: [userId], references: [id])
-  interventions       Intervention[]
-  sales               Sale[]
-  userDeviceHistories UserDeviceHistory[]
+  id                Int                 @id @default(autoincrement())
+  nom               String              @db.VarChar(255)        // New field: Nom
+  macAdresse        String              @db.VarChar(255)        // Renamed from macAdr
+  status            DeviceStatus                                // Updated enum
+  peripheriques     Json?                                        // New field: Les périphériques attaché
+  localisation      Json?                                        // New field: Localisation
+  cpuUsage          Float?                                       // New field: CPU usage
+  ramUsage          Float?                                       // New field: RAM usage
+  userId            Int?
+  EndUser           EndUser?            @relation(fields: [userId], references: [id])
+  Sale              Sale[]
+  UserDeviceHistory UserDeviceHistory[]
+  maintainerId  Int?         // New
+  Maintainer        Maintainer?         @relation("MaintainerToDevice", fields: [maintainerId], references: [id])
+  Intervention      Intervention[]
 }
 
 model Notification {
@@ -203,6 +206,7 @@ model Intervention {
   maintainerId Int
   isRemote     Boolean
   planDate     DateTime
+  priority     Int
   device       Device           @relation(fields: [deviceId], references: [id])
   maintainer   Maintainer       @relation(fields: [maintainerId], references: [id])
 }
@@ -230,13 +234,17 @@ enum Role {
 
 enum DeviceType {
   Ceinture
+  // Canne_Augmenté
+  // Lunnettes_Connectées
 }
 
 enum DeviceStatus {
   connected
   disconnected
   under_maintenance
-  en_panne
+  out_of_service
+  defective
+  broken_down
 }
 
 enum ZoneType {

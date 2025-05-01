@@ -1,12 +1,30 @@
-import express from "express";
+import express from 'express';
+import {
+  controlDevice,
+  requestDeviceStatus,
+  subscribeDeviceHeartbeat,
+} from '../controllers/deviceController'; 
 import {getAllDevices,getDevice,createDevice,updateDevice, deleteDevice} from "../controllers/deviceController";
-import { authMiddleware } from "../middlewares/authMiddleware";
-import { create } from "domain";
-export const deviceRouter = express.Router();
+
+const router = express.Router();
+
+// Control device (send command)
+router.post('/control', controlDevice);
+
+// Request current device status
+router.get('/:deviceId/status', requestDeviceStatus);
+
+// Subscribe to heartbeat updates
+router.post('/subscribe/:deviceId', subscribeDeviceHeartbeat);
 
 
-deviceRouter.get("/",getAllDevices);//http://localhost:5002/devices?page=1&pageSize=5
-deviceRouter.get("/:id",getDevice);//http://localhost:5002/devices/3
-deviceRouter.post("/", createDevice);//http://localhost:5002/devices
-deviceRouter.put("/:id", updateDevice);//http://localhost:5002/devices/3
-deviceRouter.delete("/:id",deleteDevice);//http://localhost:5002/devices/3
+router.get("/",getAllDevices);//http://localhost:5002/devices?page=1&pageSize=5
+router.get("/:id",getDevice);//http://localhost:5002/devices/3
+router.post("/", createDevice);//http://localhost:5002/devices
+router.put("/:id", updateDevice);//http://localhost:5002/devices/3
+router.delete("/:id",deleteDevice);//http://localhost:5002/devices/3
+
+
+export default router; // Export the router to be used in your main app file
+
+

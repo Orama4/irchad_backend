@@ -3,6 +3,9 @@
 node_modules
 
 
+package-lock.json
+package.json
+
 venv
 # Environment variables
 .env
@@ -50,3 +53,5 @@ prisma/generated
 
 # VS Code settings
 .vscode
+
+.gitignore

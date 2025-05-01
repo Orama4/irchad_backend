@@ -12,8 +12,6 @@ dotenv.config();
 
 export const app = express();
 const PORT = process.env.NODE_ENV === "test" ? 0 : 5001; 
-// Middlewares
-const PORT = process.env.NODE_ENV === "test" ? 0 : 5002;
 
 // Enhanced CORS configuration
 const corsOptions = {
@@ -40,11 +38,6 @@ app.use(express.json());
 // Routes
 app.use("/users", userRoutes);
 app.use("/devices", deviceRoutes);
-
-
-// Démarrage contrôlé du serveur
-export const server = app.listen(PORT, () => {
-  console.log(`Stats service actif sur http://localhost:${PORT})`);
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'healthy' });

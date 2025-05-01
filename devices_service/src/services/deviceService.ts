@@ -44,7 +44,7 @@ const THRESHOLDS = {
 };
 
 // Time settings (in milliseconds)
-const HEARTBEAT_TIMEOUT = 1 * 60 * 1000; // 2 minutes
+const HEARTBEAT_TIMEOUT = 1 * 60 * 1000; // 1 minutes
 const MONITOR_INTERVAL = 60 * 100;      // 1 minute
 
 // Function to handle heartbeat messages
@@ -230,13 +230,13 @@ export async function updateDeviceStatusInDB(deviceId: number, status: 'connecte
   }
 }
 
-// Create a new intervention
 export async function createIntervention(
   type: 'preventive' | 'curative',
   deviceId: number,
   maintainerId: number,
   priority: number,
-  description: string = ''
+  isRemote: boolean = false ,
+  planDate: Date = new Date()
 ) {
   try {
     const intervention = await prisma.intervention.create({
@@ -244,8 +244,9 @@ export async function createIntervention(
         type,
         device: { connect: { id: deviceId } },
         maintainer: { connect: { id: maintainerId } },
-        priority: priority,
-        description
+        priority,
+        isRemote,
+        planDate,
       },
     });
     return intervention;
@@ -254,7 +255,6 @@ export async function createIntervention(
     throw new Error('Error creating intervention');
   }
 }
-
 // --- Device State Setters ---
 
 const setDeviceDefective = async (deviceId: number, reason: string = '') => {
@@ -266,7 +266,8 @@ const setDeviceDefective = async (deviceId: number, reason: string = '') => {
     deviceId, 
     1, // Maintainer ID
     1, // Priority (high)
-    `Device marked as defective: ${reason}`
+    false ,
+    new Date()
   );
 };
 
@@ -277,8 +278,9 @@ const setDeviceOutOfService = async (deviceId: number) => {
     "curative", 
     deviceId, 
     1, // Maintainer ID
-    2, // Priority (medium)
-    "Device is unreachable or offline"
+    1, // Priority (high)
+    true ,
+    new Date()
   );
 };
 

@@ -2,156 +2,230 @@ import mqttClient from '../utils/mqtt_client';
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-
-interface DeviceHeartbeat {
-  [deviceId: string]: number;
+// Interface for heartbeat data
+interface HeartbeatData {
+  status: string;
+  metrics: {
+    cpu_percent: number;
+    ram_used: number;
+    ram_total: number;
+    ram_percent: number;
+    temperature: number;
+  };
+  timestamp: number;
+  device_id: string;
+  online: boolean;
 }
 
+// Interface for device heartbeat tracking
+interface DeviceHeartbeatStore {
+  [deviceId: string]: HeartbeatData;
+}
+
+// Interface for risky devices tracking
 interface RiskyDevices {
-  [deviceId: string]: number;
+  [deviceId: string]: {
+    timestamp: number;
+    reason: string;
+  }
 }
 
-// Heartbeat and risky devices tracking
-let deviceLastHeartbeat: DeviceHeartbeat = {};
-let riskyDevices: RiskyDevices = {};
+// Store of latest heartbeat data per device
+const deviceHeartbeatStore: DeviceHeartbeatStore = {};
+
+// Tracking risky devices
+const riskyDevices: RiskyDevices = {};
 
 // Thresholds for metrics
 const THRESHOLDS = {
-  temperature: 70, // °C
-  cpu_percent: 85, // %
-  ram_percent: 90, // %
+  temperature: 50, // °C
+  cpu_percent: 6, // %
+  ram_percent: 40, // %
 };
 
-// Time settings
-const HEARTBEAT_TIMEOUT = 5 * 60 * 1000; // 5 minutes (ms)
-const MONITOR_INTERVAL = 60 * 10; // Check every 1 minute (ms)
+// Time settings (in milliseconds)
+const HEARTBEAT_TIMEOUT = 1 * 60 * 1000; // 2 minutes
+const MONITOR_INTERVAL = 60 * 100;      // 1 minute
 
 // Function to handle heartbeat messages
-const handleHeartbeatMessage = (deviceId: number, timestamp: number) => {
-  deviceLastHeartbeat[deviceId] = timestamp;
-  console.log(`Received heartbeat from ${deviceId} at ${timestamp}`);
+const handleHeartbeatMessage = (deviceId: string, heartbeatData: HeartbeatData) => {
+  // Store the complete heartbeat data
+  deviceHeartbeatStore[deviceId] = heartbeatData;
+  
+  console.log(`📡 Received heartbeat from ${deviceId} at ${new Date(heartbeatData.timestamp * 1000).toLocaleString()}`);
+  
+  // Analyze metrics for risk factors
+  analyzeMetrics(deviceId, heartbeatData);
+};
+
+// Function to analyze device metrics for risk factors
+const analyzeMetrics = (deviceId: string, heartbeatData: HeartbeatData) => {
+  const { metrics, status } = heartbeatData;
+  
+  // Skip analysis if device is already marked as defective
+  if (status === 'Defectueux') {
+    return;
+  }
+  
+  // Check metrics against thresholds
+  let isRisky = false;
+  let riskReason = '';
+  
+  if (metrics.temperature >= THRESHOLDS.temperature) {
+    console.warn(`⚠️ ${deviceId} high temperature: ${metrics.temperature}°C`);
+    isRisky = true;
+    riskReason = `High temperature: ${metrics.temperature}°C`;
+  }
+  if (metrics.cpu_percent >= THRESHOLDS.cpu_percent) {
+    console.warn(`⚠️ ${deviceId} high CPU usage: ${metrics.cpu_percent}%`);
+    isRisky = true;
+    riskReason = riskReason || `High CPU usage: ${metrics.cpu_percent}%`;
+  }
+  if (metrics.ram_percent >= THRESHOLDS.ram_percent) {
+    console.warn(`⚠️ ${deviceId} high RAM usage: ${metrics.ram_percent}%`);
+    isRisky = true;
+    riskReason = riskReason || `High RAM usage: ${metrics.ram_percent}%`;
+  }
+
+  // Update risky devices tracking
+  if (isRisky) {
+    riskyDevices[deviceId] = { 
+      timestamp: Date.now(),
+      reason: riskReason
+    };
+  } else {
+    // Remove from risky devices if metrics are now normal
+    if (riskyDevices[deviceId]) {
+      delete riskyDevices[deviceId];
+      console.log(`✅ ${deviceId} metrics returned to normal range`);
+    }
+  }
 };
 
 // Function to send device command
-export const sendDeviceCommand = (deviceId: number, command: 'activer' | 'desactiver' | 'set_defective' | 'set_maintenance') => {
+export const sendDeviceCommand = (deviceId: number, command: 'activer' | 'desactiver' | 'set_defective' | 'set_maintenance' | 'status' | 'get_heartbeat_data') => {
   const topic = `devices/${deviceId}/commands`;
   const payload = JSON.stringify({ command });
 
   mqttClient.publish(topic, payload, (err) => {
     if (err) {
-      console.error(`Failed to send command to ${deviceId}`, err);
+      console.error(`❌ Failed to send command to ${deviceId}`, err);
     } else {
-      console.log(`Command sent to ${deviceId}:`, payload);
+      console.log(`📤 Command sent to ${deviceId}: ${command}`);
     }
   });
 };
 
 // Function to request device status
 export const sendStatusRequest = (deviceId: number) => {
-  const topic = `devices/${deviceId}/commands`;
-  const payload = JSON.stringify({ command: "status" });
+  sendDeviceCommand(deviceId, 'status');
+};
 
-  mqttClient.publish(topic, payload, (err) => {
-    if (err) {
-      console.error(`❌ Failed to request status from ${deviceId}`, err);
-    } else {
-      console.log(`📡 Status request sent to ${deviceId}`);
-    }
-  });
+// Function to request heartbeat data
+export const requestHeartbeatData = (deviceId: number) => {
+  sendDeviceCommand(deviceId, 'get_heartbeat_data');
 };
 
 // Subscribe to device state and listen for heartbeats
-export const subscribeToDeviceState = (deviceId: number) => {
-  const topic = `devices/${deviceId}/state`;
-
-  mqttClient.subscribe(topic, (err) => {
+export const subscribeToDeviceCommunication = (deviceId: number) => {
+  // Subscribe to status responses
+  const statusTopic = `devices/${deviceId}/status`;
+  mqttClient.subscribe(statusTopic, (err) => {
     if (err) {
-      console.error(`? Failed to subscribe to ${deviceId}'s state`, err);
+      console.error(`❌ Failed to subscribe to ${deviceId}'s status`, err);
     } else {
-      console.log(`?? Subscribed to ${deviceId}'s state`);
+      console.log(`📢 Subscribed to ${deviceId}'s status`);
+    }
+  });
+  
+  // Subscribe to heartbeats
+  const heartbeatTopic = `devices/${deviceId}/heartbeat`;
+  mqttClient.subscribe(heartbeatTopic, (err) => {
+    if (err) {
+      console.error(`❌ Failed to subscribe to ${deviceId}'s heartbeat`, err);
+    } else {
+      console.log(`📢 Subscribed to ${deviceId}'s heartbeat`);
     }
   });
 
+  // Listen for messages on both topics
   mqttClient.on('message', (topic, message) => {
-    if (topic === `devices/${deviceId}/state`) {
-      const state = JSON.parse(message.toString());
-      console.log(`?? Received state from ${deviceId}:`, state);
-      // Handle heartbeat
-      if (state.status === 'heartbeat') {
-        handleHeartbeatMessage(deviceId, Date.now());
+    try {
+      const data = JSON.parse(message.toString());
+      
+      if (topic === statusTopic) {
+        console.log(`📥 Received status from ${deviceId}:`, data);
+        handleStatusMessage(deviceId.toString(), data);
+      } 
+      else if (topic === heartbeatTopic) {
+        handleHeartbeatMessage(deviceId.toString(), data);
+        console.log(`📡 Heartbeat data:`, data);
       }
+    } catch (error) {
+      console.error(`❌ Error handling message from ${topic}:`, error);
     }
   });
 };
 
-// Handle state update (with metrics verification)
-const handleStateMessage = (deviceId: number, state: any) => {
-  if (state.status === 'heartbeat') {
-    handleHeartbeatMessage(deviceId, Date.now());
-    return;
+// Handle status update
+const handleStatusMessage = (deviceId: string, status: any) => {
+  // Update heartbeat data if it contains metrics
+  if (status.metrics) {
+    const heartbeatData: HeartbeatData = {
+      status: status.status,
+      metrics: status.metrics,
+      timestamp: status.timestamp || Math.floor(Date.now() / 1000),
+      device_id: deviceId,
+      online: status.online
+    };
+    
+    handleHeartbeatMessage(deviceId, heartbeatData);
   }
-
-  if (state.metrics) {
-    const { temperature, cpu_percent, ram_percent } = state.metrics;
-
-    let isRisky = false;
-    if (temperature !== undefined && temperature >= THRESHOLDS.temperature) {
-      console.warn(`⚠️ ${deviceId} high temperature: ${temperature}°C`);
-      isRisky = true;
-    }
-    if (cpu_percent !== undefined && cpu_percent >= THRESHOLDS.cpu_percent) {
-      console.warn(`⚠️ ${deviceId} high CPU usage: ${cpu_percent}%`);
-      isRisky = true;
-    }
-    if (ram_percent !== undefined && ram_percent >= THRESHOLDS.ram_percent) {
-      console.warn(`⚠️ ${deviceId} high RAM usage: ${ram_percent}%`);
-      isRisky = true;
-    }
-
-    if (isRisky) {
-      riskyDevices[deviceId] = Date.now();
-    } else {
-      delete riskyDevices[deviceId];
-    }
-  }
-
-  // Update heartbeat timestamp after any valid state
-  handleHeartbeatMessage(deviceId, Date.now());
 };
 
-// Regularly monitor heartbeats
+// Regularly monitor heartbeats for missing devices
 export const monitorDeviceHeartbeats = () => {
   const now = Date.now();
 
-  for (const deviceId in deviceLastHeartbeat) {
-    const lastHeartbeat = deviceLastHeartbeat[deviceId];
-    const timeSinceLastHeartbeat = now - lastHeartbeat;
+  for (const deviceId in deviceHeartbeatStore) {
+    const heartbeatData = deviceHeartbeatStore[deviceId];
+    const lastHeartbeatTime = heartbeatData.timestamp * 1000; // Convert to milliseconds
+    const timeSinceLastHeartbeat = now - lastHeartbeatTime;
 
     if (timeSinceLastHeartbeat > HEARTBEAT_TIMEOUT) {
+      console.warn(`⚠️ Device ${deviceId} has missed heartbeats for ${Math.round(timeSinceLastHeartbeat/1000/60)} minutes`);
+      
       if (riskyDevices[deviceId]) {
-        //covert deviceId to number
-        setDeviceDefective(Number(deviceId));
+        // Device was already showing risk factors before going offline
+        setDeviceDefective(Number(deviceId), riskyDevices[deviceId].reason);
       } else {
+        // Device just went offline without prior risk factors
         setDeviceOutOfService(Number(deviceId));
       }
+      
       // Clean up after marking
-      delete deviceLastHeartbeat[deviceId];
+      delete deviceHeartbeatStore[deviceId];
       delete riskyDevices[deviceId];
     }
   }
 };
 
+// Get the last heartbeat data for a device
+export const getLastHeartbeatData = (deviceId: number): HeartbeatData | null => {
+  return deviceHeartbeatStore[deviceId.toString()] || null;
+};
 
-// Update device status
+// Update device status in database
 export async function updateDeviceStatusInDB(deviceId: number, status: 'connected' | 'disconnected' | 'under_maintenance' | 'out_of_service' | 'defective' | 'broken_down') {
   try {
+    console.log('Attempting to set status:', status);
     const updatedDevice = await prisma.device.update({
       where: { id: deviceId },
       data: { status },
     });
     return updatedDevice;
   } catch (error) {
-    console.error('Failed to update device status:', error);
+    console.error('❌ Failed to update device status:', error);
     throw new Error('Error updating device status');
   }
 }
@@ -162,6 +236,7 @@ export async function createIntervention(
   deviceId: number,
   maintainerId: number,
   priority: number,
+  description: string = ''
 ) {
   try {
     const intervention = await prisma.intervention.create({
@@ -170,32 +245,48 @@ export async function createIntervention(
         device: { connect: { id: deviceId } },
         maintainer: { connect: { id: maintainerId } },
         priority: priority,
+        description
       },
     });
     return intervention;
   } catch (error) {
-    console.error('Failed to create intervention:', error);
+    console.error('❌ Failed to create intervention:', error);
     throw new Error('Error creating intervention');
   }
 }
 
-
-
 // --- Device State Setters ---
 
-const setDeviceDefective = async (deviceId: number) => {
-  console.error(`🚨 Device ${deviceId} is now marked as Défectueux (defective).`);
+const setDeviceDefective = async (deviceId: number, reason: string = '') => {
+  console.error(`🚨 Device ${deviceId} is now marked as Défectueux (defective). Reason: ${reason}`);
   sendDeviceCommand(deviceId, 'set_defective');
   await updateDeviceStatusInDB(deviceId, "defective");
-  await createIntervention("curative",deviceId, 1, 1); // Assuming maintainerId is 1 and priority is 1 for simplicity
+  await createIntervention(
+    "curative", 
+    deviceId, 
+    1, // Maintainer ID
+    1, // Priority (high)
+    `Device marked as defective: ${reason}`
+  );
 };
 
 const setDeviceOutOfService = async (deviceId: number) => {
   console.warn(`⚠️ Device ${deviceId} is now marked as Hors service (offline).`);
   await updateDeviceStatusInDB(deviceId, "broken_down");
-  await createIntervention("curative",deviceId, 1, 1); // Assuming maintainerId is 1 and priority is 1 for simplicity
+  await createIntervention(
+    "curative", 
+    deviceId, 
+    1, // Maintainer ID
+    2, // Priority (medium)
+    "Device is unreachable or offline"
+  );
 };
 
 // --- Start the Heartbeat Monitor ---
 setInterval(monitorDeviceHeartbeats, MONITOR_INTERVAL);
 
+// Export functions for API endpoints
+export {
+  deviceHeartbeatStore,
+  riskyDevices
+};

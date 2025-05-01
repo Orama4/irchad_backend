@@ -74,6 +74,7 @@ model Maintainer {
   id            Int            @id @default(autoincrement())
   userId        Int            @unique
   interventions Intervention[]
+  devices       Device[]       @relation("MaintainerToDevice")
   user          User           @relation(fields: [userId], references: [id])
 }
 
@@ -97,7 +98,7 @@ model Device {
   Sale              Sale[]
   UserDeviceHistory UserDeviceHistory[]
   maintainerId  Int?         // New
-  Maintainer    Maintainer?  @relation(fields: [maintainerId], references: [id])
+  Maintainer        Maintainer?         @relation("MaintainerToDevice", fields: [maintainerId], references: [id])
   Intervention      Intervention[]
 }
 

@@ -1,16 +1,19 @@
-import express from "express";
-import { } from "../controllers/deviceController";
-import { authMiddleware } from "../middlewares/authMiddleware";
-
+import express from 'express';
+import {
+  controlDevice,
+  requestDeviceStatus,
+  subscribeDeviceHeartbeat,
+} from '../controllers/deviceController'; 
 
 const router = express.Router();
 
-router.get("/",/*authMiddleware,*/);
+// Control device (send command)
+router.post('/control', controlDevice);
 
-router.post("/");
-router.delete("/");
-router.put("/");
+// Request current device status
+router.get('/:deviceId/status', requestDeviceStatus);
 
-     
-                                                                    
-export default router;
+// Subscribe to heartbeat updates
+router.post('/subscribe/:deviceId', subscribeDeviceHeartbeat);
+
+export default router; // Export the router to be used in your main app file

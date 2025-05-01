@@ -11,7 +11,7 @@ import { subscribe, publish } from "./utils/mqtt_client";
 dotenv.config();
 
 export const app = express();
-const PORT = process.env.NODE_ENV === "test" ? 0 : 5002; 
+const PORT = process.env.NODE_ENV === "test" ? 0 : 5001; 
 // Middlewares
 app.use(express.json());
 app.use(cors());
@@ -23,19 +23,6 @@ app.use("/users", userRoutes);
 //Routes of devices service 
 app.use("/devices", deviceRoutes);
 
-
-
-const REQUEST_TOPIC = "topic/request";
-const RESPONSE_TOPIC = "topic/response";
-
-// Subscribe to topic
-subscribe(REQUEST_TOPIC, (payload) => {
-  console.log("📥 Received from topic/request:", payload);
-
-});
-
-
-publish(RESPONSE_TOPIC, { message: "Hello from Node.js!" });
 
 
 

@@ -35,6 +35,23 @@ def update_environment(db: Session, env_id: int, update_data: EnvironmentUpdate)
     db.refresh(env)
     return env
 
+async def save_uploaded_file(file: UploadFile) -> str:
+    """Save an uploaded file and return the file path"""
+    # Create uploads directory if it doesn't exist
+    upload_dir = "uploads"
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    # Create a unique filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{timestamp}_{file.filename}"
+    file_path = os.path.join(upload_dir, filename)
+    
+    # Save the file
+    with open(file_path, "wb") as buffer:
+        buffer.write(await file.read())
+    
+    return file_path
+
 def delete_environment(db: Session, env_id: int):
     env = db.query(Environment).filter(Environment.id == env_id).first()
     if not env:

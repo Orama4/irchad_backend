@@ -1,5 +1,14 @@
 import { Request, Response } from "express";
-import { sendDeviceCommand, subscribeToDeviceState } from '../services/deviceService';
+import { 
+  sendDeviceCommand, 
+  sendStatusRequest, 
+  subscribeToDeviceCommunication, 
+  deviceHeartbeatStore,
+  riskyDevices,
+  requestHeartbeatData,
+  getLastHeartbeatData
+} from '../services/deviceService';
+
 import { 
   getDeviceService,
   getAllDevicesService, 
@@ -111,81 +120,70 @@ import {
   };
 
 
-
-// Handle device control command using sendDeviceCommand
-export const controlDevice = async (req: Request, res: Response) => {
+// Handle device control command
+export const controlDevice = (req: Request, res: Response) => {
   const { deviceId, action } = req.body;
 
+  // Validate the action
   if (!['activer', 'desactiver', 'set_defective', 'set_maintenance'].includes(action)) {
     return res.status(400).json({ error: 'Invalid action' });
   }
 
-  try {
-    const response = await sendDeviceCommand(deviceId, action);
-    return res.json({ message: `Command "${action}" sent to device ${deviceId}`, response });
-  } catch (error: any) {
-    console.error("Error sending control command:", error);
-    
-    // Check for timeout and return a custom message
-    if (error.message.includes('Timeout')) {
-      return res.status(504).json({ error: 'ODB is not activated or not responding' });
-    }
-
-    return res.status(500).json({ error: "Failed to send control command" });
-  }
+  sendDeviceCommand(deviceId, action);
+  res.json({ message: `Command ${action} sent to device ${deviceId}` });
 };
 
 // Handle device status request
-export const requestDeviceStatus = async (req: Request, res: Response) => {
+export const requestDeviceStatus = (req: Request, res: Response) => {
   const { deviceId } = req.params;
-
-  try {
-    const response = await sendDeviceCommand(Number(deviceId), 'status');
-    return res.json({ message: `Received response from device ${deviceId}`, response });
-  } catch (error: any) {
-    console.error("Error sending status request:", error);
-
-    // Check for timeout and return a custom message
-    if (error.message.includes('Timeout')) {
-      return res.status(504).json({ error: 'ODB is not activated or not responding' });
-    }
-
-    return res.status(500).json({ error: error.message });
-  }
+  sendStatusRequest(Number(deviceId));
+  res.json({ message: `Status request sent to ${deviceId}` });
 };
 
-// Subscribe to device heartbeat and state updates
-export const subscribeDeviceHeartbeat = (req: Request, res: Response) => {
+// Subscribe to device heartbeat and status updates
+export const subscribeDeviceUpdates = (req: Request, res: Response) => {
   const { deviceId } = req.params;
-
-  try {
-    subscribeToDeviceState(Number(deviceId)); // Subscribing to device state
-    return res.json({ message: `Subscribed to ${deviceId}'s heartbeat` });
-  } catch (error: any) {
-    console.error("Error subscribing to heartbeat:", error);
-    return res.status(500).json({ error: "Failed to subscribe to heartbeat" });
-  }
+  subscribeToDeviceCommunication(Number(deviceId));
+  res.json({ message: `Subscribed to ${deviceId}'s updates` });
 };
 
-// POST /device/send-command
-export const sendCustomCommand = async (req: Request, res: Response) => {
-  const { deviceId, command, payload } = req.body;
-
-  if (!deviceId || !command) {
-    return res.status(400).json({ error: "Missing deviceId or command" });
+// Get last known heartbeat for a device from memory
+export const getDeviceHeartbeat = (req: Request, res: Response) => {
+  const { deviceId } = req.params;
+  const numDeviceId = Number(deviceId);
+  
+  // First, check if we have the data in memory
+  const heartbeatData = getLastHeartbeatData(numDeviceId);
+  
+  if (heartbeatData) {
+    return res.json({
+      deviceId: numDeviceId,
+      heartbeat: heartbeatData,
+      lastUpdated: new Date(heartbeatData.timestamp * 1000).toISOString()
+    });
   }
+  
+  // If not in memory, request it from the device
+  requestHeartbeatData(numDeviceId);
+  return res.status(202).json({ 
+    message: `No heartbeat data available. Request sent to device ${deviceId}. Try again shortly.` 
+  });
+};
 
-  try {
-    const response = await sendDeviceCommand(deviceId, command, payload || {});
-    return res.json({ message: `📤 Custom command '${command}' sent to device ${deviceId}`, response });
-  } catch (error: any) {
-    console.error("Error sending custom command:", error);
 
-    // Check for timeout and return a custom message
-    if (error.message.includes('Timeout')) {
-      return res.status(504).json({ error: 'ODB is not activated or not responding' });
-    }
+// Get all risky devices
+export const getRiskyDevices = (_req: Request, res: Response) => {
+  return res.json({
+    riskyDevices: riskyDevices,
+    count: Object.keys(riskyDevices).length,
+    timestamp: new Date().toISOString()
+  });
+  
+};
 
-    return res.status(500).json({ error: "Failed to send custom command" });
-  }
+// Force refresh of device heartbeat
+export const refreshDeviceHeartbeat = (req: Request, res: Response) => {
+  const { deviceId } = req.params;
+  requestHeartbeatData(Number(deviceId));
+  res.json({ message: `Heartbeat refresh request sent to ${deviceId}` });
 };

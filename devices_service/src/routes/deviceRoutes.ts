@@ -1,9 +1,13 @@
 import express from 'express';
-import {
-  controlDevice,
-  requestDeviceStatus,
-  subscribeDeviceHeartbeat,
-} from '../controllers/deviceController'; 
+import { 
+  controlDevice, 
+  requestDeviceStatus, 
+  subscribeDeviceUpdates, 
+  getDeviceHeartbeat, 
+  refreshDeviceHeartbeat,
+  getRiskyDevices
+} from "../controllers/deviceController";
+
 import {getAllDevices,getDevice,createDevice,updateDevice, deleteDevice} from "../controllers/deviceController";
 
 const router = express.Router();
@@ -11,11 +15,13 @@ const router = express.Router();
 // Control device (send command)
 router.post('/control', controlDevice);
 
-// Request current device status
-router.get('/:deviceId/status', requestDeviceStatus);
+//status and subscribtion
+router.get('/status/:deviceId', requestDeviceStatus);  //sends a new request to the device for its status
+router.post('/subscribe/:deviceId', subscribeDeviceUpdates); // Subscribe to device updates
 
-// Subscribe to heartbeat updates
-router.post('/subscribe/:deviceId', subscribeDeviceHeartbeat);
+// Heartbeat data routes
+router.get('/heartbeat/:deviceId', getDeviceHeartbeat);  //first checks cached data, then requests new data if needed
+router.get('/risky-devices', getRiskyDevices);      // Get all risky devices
 
 
 router.get("/",getAllDevices);//http://localhost:5002/devices?page=1&pageSize=5

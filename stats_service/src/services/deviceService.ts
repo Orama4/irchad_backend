@@ -17,9 +17,7 @@ export const getDevices = async (page = 1,query:string,pageSize = 10) => {
     return {devices,total}
 };
 
-
-
-
+// changes here 
 export const getDeviceStats = async () => {
     const totalDevices = await prisma.device.count();
     const calculatePercentage = (count: number) => 
@@ -27,8 +25,9 @@ export const getDeviceStats = async () => {
     const maintenanceDevices = await prisma.device.count({
         where: { status: DeviceStatus.under_maintenance }
     });
+    // count the devices that are in maintenance
     const enpanneDevices = await prisma.device.count({
-        where: { status: DeviceStatus.en_panne }
+        where: { status: DeviceStatus.broken_down }
     });
     const connectedDevices = await prisma.device.count({
         where: { status: DeviceStatus.connected }
@@ -88,6 +87,7 @@ const storedDeviceProgress = monthOrder.map((month) => ({
 }));
     return storedDeviceProgress;
   };
+
 
 export const filterDevices = async (type?: string, status?: DeviceStatus) => {
     return await prisma.device.findMany({

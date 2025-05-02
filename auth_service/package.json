@@ -15,7 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@prisma/client": "^6.7.0",
+    "@prisma/client": "^6.4.1",
     "bcryptjs": "^3.0.2",
     "chai": "^5.2.0",
     "chromedriver": "^134.0.3",
@@ -27,7 +27,6 @@
     "mocha": "^11.1.0",
     "nodemailer": "^6.10.1",
     "nodemon": "^3.1.9",
-    "prisma": "^6.7.0",
     "selenium-webdriver": "^4.29.0"
   },
   "devDependencies": {
@@ -38,6 +37,7 @@
     "@types/node": "^22.15.3",
     "@types/nodemailer": "^6.4.17",
     "@types/selenium-webdriver": "^4.1.28",
+    "prisma": "^6.4.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.2"
   }

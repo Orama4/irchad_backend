@@ -113,10 +113,10 @@ export const getMaintainerDeviceStatsById = async (req: Request, res: Response):
     }
 
     const totalDevices = maintainerDevices.Devices.length;
-    const connectedDevices = maintainerDevices.Devices.filter(device => device.status === 'Actif').length;
-    const disconnectedDevices = maintainerDevices.Devices.filter(device => device.status === 'Hors_service' || device.status === 'Banne').length;
-    const downDevices = maintainerDevices.Devices.filter(device => device.status === 'Defectueux').length;
-    const inMaintenanceDevices = maintainerDevices.Devices.filter(device => device.status === 'En_maintenance').length;
+    const connectedDevices = maintainerDevices.Devices.filter(device => device.status === 'connected').length;
+    const disconnectedDevices = maintainerDevices.Devices.filter(device => device.status === 'disconnected' || device.status === 'out_of_service').length;
+    const downDevices = maintainerDevices.Devices.filter(device => device.status === 'defective').length;
+    const inMaintenanceDevices = maintainerDevices.Devices.filter(device => device.status === 'under_maintenance').length;
 
     res.json({
       totalDevices,

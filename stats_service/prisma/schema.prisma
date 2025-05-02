@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "./node_modules/@prisma/client" // specify the output path
   binaryTargets = ["native", "windows"]
 }
 
@@ -30,13 +29,17 @@ model Decider {
 
 model Device {
   id                Int                 @id @default(autoincrement())
-  nom               String              @db.VarChar(255)        // New field: Nom
-  macAdresse        String              @db.VarChar(255)        // Renamed from macAdr
+  nom               String              @default("Unnamed Device") @db.VarChar(255)        // New field: Nom
+  macAdresse        String              @default("UNKNOWN") @db.VarChar(255)        // Renamed from macAdr
   status            DeviceStatus                                // Updated enum
   peripheriques     Json?                                        // New field: Les périphériques attaché
   localisation      Json?                                        // New field: Localisation
   cpuUsage          Float?                                       // New field: CPU usage
   ramUsage          Float?                                       // New field: RAM usage
+  price 		Int?
+  manufacturingCost 		Float?
+  createdAt 		DateTime @default(now())
+  type 		String
   userId            Int?
   EndUser           EndUser?            @relation(fields: [userId], references: [id])
   Sale              Sale[]
@@ -58,6 +61,7 @@ model EndUser {
   User        User          @relation(fields: [userId], references: [id])
   HelpRequest HelpRequest[]
   Sale        Sale[]
+  urgenceContacts Contact[] 
 }
 
 model EnvUser {
@@ -195,6 +199,8 @@ model User {
   email             String              @unique @db.VarChar(100)
   password          String              @db.VarChar(255)
   role              Role?
+  lastLogin 		DateTime?
+  createdAt 		DateTime @default(now())
   Admin             Admin?
   Commercial        Commercial?
   Decider           Decider?
@@ -206,6 +212,7 @@ model User {
   Notification      Notification[]
   Profile           Profile?
   UserDeviceHistory UserDeviceHistory[]
+  securityIncidents   SecurityIncident[]
 }
 
 model UserDeviceHistory {
@@ -231,11 +238,12 @@ model Zone {
 }
 
 enum DeviceStatus {
-  Actif
-  Banne
-  Hors_service
-  Defectueux
-  En_maintenance
+  connected
+  disconnected
+  under_maintenance
+  out_of_service
+  defective
+  broken_down
 }
 
 enum DeviceType {
@@ -284,4 +292,34 @@ model Otp {
   email     String   @db.VarChar(100)
   otp       String   @db.VarChar(6) // Store OTP as a 6-digit string
   expiresAt DateTime
+}
+
+model Contact {
+  id         Int      @id @default(autoincrement())
+  nom        String
+  telephone  String
+  endUserId  Int                             // Foreign key
+  endUser    EndUser   @relation(fields: [endUserId], references: [id])
+}
+
+
+// Added enum for security incident severity levels
+enum SeverityLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// Added new model for security incident tracking
+model SecurityIncident {
+  id          Int           @id @default(autoincrement())
+  title       String        @db.VarChar(100)
+  description String        @db.VarChar(255)
+  severity    SeverityLevel @default(LOW)
+  reportedAt  DateTime      @default(now())
+  resolvedAt  DateTime?
+  reportedBy  Int
+  user        User          @relation(fields: [reportedBy], references: [id])
+  isResolved  Boolean       @default(false)
 }

@@ -1,1 +1,0 @@
-{"root":["./src/index.ts","./src/controllers/dashboardcontroller.ts","./src/controllers/zonecontroller.ts","./src/lib/prisma.ts","./src/routes/zoneroutes.ts","./src/services/zoneservice.ts"],"version":"5.8.2"}

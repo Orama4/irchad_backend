@@ -236,7 +236,7 @@ export async function createIntervention(
   type: 'preventive' | 'curative',
   deviceId: number,
   maintainerId: number,
-  priority: number,
+  Priority: String,
   isRemote: boolean = false ,
   planDate: Date = new Date()
 ) {
@@ -244,9 +244,9 @@ export async function createIntervention(
     const intervention = await prisma.intervention.create({
       data: {
         type,
-        device: { connect: { id: deviceId } },
-        maintainer: { connect: { id: maintainerId } },
-        priority,
+        Device: { connect: { id: deviceId } },
+        Maintainer: { connect: { id: maintainerId } },
+        Priority,
         isRemote,
         planDate,
       },
@@ -267,7 +267,7 @@ const setDeviceDefective = async (deviceId: number, reason: string = '') => {
     "curative", 
     deviceId, 
     1, // Maintainer ID
-    1, // Priority (high)
+    "1", // Priority (high)
     false ,
     new Date()
   );
@@ -280,7 +280,7 @@ const setDeviceOutOfService = async (deviceId: number) => {
     "curative", 
     deviceId, 
     1, // Maintainer ID
-    1, // Priority (high)
+    "1", // Priority (high)
     true ,
     new Date()
   );

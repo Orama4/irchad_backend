@@ -254,7 +254,7 @@ async function main() {
     // Create a decider
     await prisma.decider.create({
       data: {
-        user: {
+        User: {
           connect: { id: randomUser.id }, // Connect to a random user
         },
       },

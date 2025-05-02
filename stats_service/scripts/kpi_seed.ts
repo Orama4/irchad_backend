@@ -124,7 +124,7 @@ async function main() {
 
   // Get end users with their user IDs
   const endUsers = await prisma.endUser.findMany({
-    include: { user: true },
+    include: { User: true },
   });
 
   if (availableDevices.length > 0 && endUsers.length > 0) {

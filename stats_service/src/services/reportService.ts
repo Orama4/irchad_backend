@@ -82,6 +82,7 @@ class ReportService {
       })),
     };
   }
+
   // Generate system usage statistics
   async generateUsageStats(startDate?: Date, endDate?: Date) {
     const dateFilter = this.createDateFilter(startDate, endDate);
@@ -152,7 +153,7 @@ class ReportService {
     const salesByDeviceType = await prisma.sale.findMany({
       where: dateFilter ? { createdAt: dateFilter } : {},
       include: {
-        device: {
+        Device: {  // updated 
           select: {
             type: true,
             price: true,
@@ -167,8 +168,8 @@ class ReportService {
     let totalRevenue = 0;
 
     salesByDeviceType.forEach((sale) => {
-      const type = sale.device.type;
-      const price = sale.device.price || 0;
+      const type = sale.Device.type;
+      const price = sale.Device.price || 0;
 
       if (!deviceTypeSales[type]) {
         deviceTypeSales[type] = { count: 0, revenue: 0 };
@@ -276,7 +277,7 @@ class ReportService {
             id: true,
             email: true,
             lastLogin: true,
-            profile: {
+            Profile: {   // updated
               select: {
                 firstname: true,
                 lastname: true,
@@ -330,9 +331,9 @@ class ReportService {
           userDetails: activeUsers.map((user) => ({
             id: user.id,
             email: user.email,
-            name: user.profile
-              ? `${user.profile.firstname || ""} ${
-                  user.profile.lastname || ""
+            name: user.Profile
+              ? `${user.Profile.firstname || ""} ${
+                  user.Profile.lastname || ""
                 }`.trim()
               : "Unknown",
             lastLogin: user.lastLogin,

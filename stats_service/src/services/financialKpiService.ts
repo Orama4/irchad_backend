@@ -37,7 +37,7 @@ export const getRevenueGrowth = async (startDate?: Date, endDate?: Date) => {
         },
       },
       include: {
-        device: {
+        Device: {
           select: {
             price: true,
           },
@@ -53,7 +53,7 @@ export const getRevenueGrowth = async (startDate?: Date, endDate?: Date) => {
         },
       },
       include: {
-        device: {
+        Device: {
           select: {
             price: true,
           },
@@ -73,7 +73,7 @@ export const getRevenueGrowth = async (startDate?: Date, endDate?: Date) => {
         },
       },
       include: {
-        device: {
+        Device: {
           select: {
             price: true,
           },
@@ -83,17 +83,17 @@ export const getRevenueGrowth = async (startDate?: Date, endDate?: Date) => {
 
     // Calculate revenue for each period
     const currentMonthRevenue = currentMonthSales.reduce(
-      (sum, sale) => sum + (sale.device?.price || 0),
+      (sum, sale) => sum + (sale.Device?.price || 0),
       0
     );
 
     const previousMonthRevenue = previousMonthSales.reduce(
-      (sum, sale) => sum + (sale.device?.price || 0),
+      (sum, sale) => sum + (sale.Device?.price || 0),
       0
     );
 
     const previousYearSameMonthRevenue = previousYearSameMonthSales.reduce(
-      (sum, sale) => sum + (sale.device?.price || 0),
+      (sum, sale) => sum + (sale.Device?.price || 0),
       0
     );
 
@@ -166,7 +166,7 @@ export const getProfitMargin = async (startDate?: Date, endDate?: Date) => {
         },
       },
       include: {
-        device: {
+        Device: {
           select: {
             price: true,
             manufacturingCost: true, // Assuming this field exists; if not, you may need schema modifications
@@ -181,16 +181,16 @@ export const getProfitMargin = async (startDate?: Date, endDate?: Date) => {
     let itemsWithCostData = 0;
 
     salesWithDevices.forEach((sale) => {
-      totalRevenue += sale.device?.price || 0;
+      totalRevenue += sale.Device?.price || 0;
 
       // Check if we have manufacturing cost data
-      if (sale.device?.manufacturingCost) {
-        totalCost += sale.device.manufacturingCost;
+      if (sale.Device?.manufacturingCost) {
+        totalCost += sale.Device.manufacturingCost;
         itemsWithCostData++;
-      } else if (sale.device?.price) {
+      } else if (sale.Device?.price) {
         // If no manufacturing cost is available, estimate as 60% of price
         // This is a business assumption and should be adjusted based on your actual data
-        const estimatedCost = sale.device.price * 0.6;
+        const estimatedCost = sale.Device.price * 0.6;
         totalCost += estimatedCost;
         itemsWithCostData++;
       }
@@ -483,7 +483,7 @@ export const getPeriodProjections = async (period: "month" | "quarter") => {
         },
       },
       include: {
-        device: {
+        Device: {
           select: {
             price: true,
             manufacturingCost: true, // Assuming this field exists
@@ -494,17 +494,17 @@ export const getPeriodProjections = async (period: "month" | "quarter") => {
 
     // Calculate current metrics
     const currentRevenue = salesData.reduce(
-      (sum, sale) => sum + (sale.device?.price || 0),
+      (sum, sale) => sum + (sale.Device?.price || 0),
       0
     );
 
     // Calculate costs
     const currentCosts = salesData.reduce((sum, sale) => {
-      if (sale.device?.manufacturingCost) {
-        return sum + sale.device.manufacturingCost;
-      } else if (sale.device?.price) {
+      if (sale.Device?.manufacturingCost) {
+        return sum + sale.Device.manufacturingCost;
+      } else if (sale.Device?.price) {
         // Fallback estimation
-        return sum + sale.device.price * 0.6;
+        return sum + sale.Device.price * 0.6;
       }
       return sum;
     }, 0);

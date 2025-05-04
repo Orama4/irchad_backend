@@ -2,6 +2,8 @@ import express from 'express';
 import dotenv from "dotenv";
 import interventionRoutes from "./routes/interventionRoutes";
 import deviceRoutes from "./routes/deviceRoutes";
+import contactRoutes from './routes/contactRoutes';
+
 const app = express();
 dotenv.config();
 const PORT = process.env.PORT || 3003;
@@ -14,6 +16,7 @@ app.get('/', (req, res) => {
 
 app.use("/api/interventions", interventionRoutes);
 app.use("/api/devices", deviceRoutes);
+app.use('/api/contacts', contactRoutes);
 
 
 app.listen(PORT, () => {

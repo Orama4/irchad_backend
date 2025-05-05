@@ -1,11 +1,15 @@
 import prisma from "../lib/prisma";
+
+
 export const countActiveUsers = async () => {
-  return prisma.user.count({ where: { endUser: { status: "active" } } });
+  return prisma.user.count({ where: { EndUser: { status: "active" } } }); // update this line
 };
 
 export const countInactiveUsers = async () => {
-  return prisma.user.count({ where: { endUser: { status: "inactive" } } });
+  return prisma.user.count({ where: { EndUser : { status: "inactive" } } });  // update this line
 };
+
+
 export const getUserProgress = async (interval: string) => {
   // Fetch all EndUser records with createdAt timestamps
   const allUsers = await prisma.endUser.findMany({
@@ -46,6 +50,7 @@ export const getUserProgress = async (interval: string) => {
   return userProgress;
 };
 
+
 function getISOWeek(date: Date): number {
   const startOfYear = new Date(date.getFullYear(), 0, 1);
   const pastDaysOfYear = (date.getTime() - startOfYear.getTime()) / 86400000;
@@ -60,8 +65,8 @@ export const getBlindUsers = async (page: number,query?:string, pageSize: number
   // Fetch the paginated users
   const users = await prisma.endUser.findMany({
     where:{
-      user:{
-        profile:{
+      User:{
+        Profile:{
           OR:[
           {firstname:{
             contains:query
@@ -78,9 +83,9 @@ export const getBlindUsers = async (page: number,query?:string, pageSize: number
     select: {
       id: true,
       status: true,
-      user: {
+      User: {
         select: {
-          profile: {
+          Profile: {
             select: {
               firstname: true,
               lastname: true,

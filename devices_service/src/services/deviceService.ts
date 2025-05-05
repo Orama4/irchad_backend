@@ -1,6 +1,6 @@
 import mqttClient from '../utils/mqtt_client';
 import { PrismaClient } from '@prisma/client';
-import { DeviceStatus } from "../../prisma/node_modules/@prisma/client";
+import { DeviceStatus } from "../node_modules/@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -493,3 +493,58 @@ export const deleteDeviceService = async (id: number) => {
     throw error;
   }
 };
+
+export async function createNotificationForDeviceAlert(alert: { deviceId: string }, content: string) {
+  try {
+    const device = await prisma.device.findUnique({
+      where: { id: parseInt(alert.deviceId) },
+      include: { EndUser: { include: { User: true } } },
+    });
+    
+    if (device?.EndUser?.User?.id) {
+      await prisma.notification.create({
+        data: {
+          content,
+          userId: device.EndUser.User.id,
+        },
+      });
+      console.log('✅ Notification enregistrée en base de données.');
+    } else {
+      console.warn('⚠️ Aucun utilisateur lié à ce dispositif.');
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors de la création de la notification:', error);
+  }
+}
+
+
+export async function getAndMarkDeviceAlerts(deviceId: number) {
+  try {
+    const device = await prisma.device.findUnique({
+      where: { id: deviceId },
+      select: { EndUser: { select: { userId: true } } }, 
+    });
+
+    if (!device?.EndUser?.userId) {
+      console.warn('⚠️ Aucun utilisateur trouvé pour ce dispositif.');
+      return [];
+    }
+
+    const userId = device.EndUser.userId; 
+
+    const alerts = await prisma.notification.findMany({
+      where: { userId, isRead: false }, 
+      orderBy: { createdAt: 'desc' },
+    });
+
+    await prisma.notification.updateMany({
+      where: { userId, isRead: false },
+      data: { isRead: true },
+    });
+
+    return alerts; 
+  } catch (error) {
+    console.error('❌ Erreur lors de la récupération ou mise à jour des notifications:', error);
+    throw error;
+  }
+}

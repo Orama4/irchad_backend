@@ -16,7 +16,7 @@ const PORT = process.env.NODE_ENV === "test" ? 0 : 5001;
 // Enhanced CORS configuration
 const corsOptions = {
   origin: [
-    'http://localhost:3000',
+    '*',
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: [
@@ -30,7 +30,7 @@ const corsOptions = {
 };
 
 // Apply CORS middleware before other middleware
-app.use(cors(corsOptions));
+app.use(cors());
 
 // Other middlewares
 app.use(express.json());

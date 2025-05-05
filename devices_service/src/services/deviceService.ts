@@ -57,7 +57,7 @@ const handleHeartbeatMessage = (deviceId: string, heartbeatData: HeartbeatData) 
   console.log(`📡 Received heartbeat from ${deviceId} at ${new Date(heartbeatData.timestamp * 1000).toLocaleString()}`);
   
   // Analyze metrics for risk factors
-  analyzeMetrics(deviceId, heartbeatData);
+ // analyzeMetrics(deviceId, heartbeatData);
 };
 
 // Function to analyze device metrics for risk factors
@@ -139,6 +139,7 @@ export const sendDeviceCommand = (
     const messageHandler = (topic: string, message: Buffer) => {
       if (topic === responseTopic) {
         const response = JSON.parse(message.toString());
+        console.log(response);
 
         mqttClient.removeListener('message', messageHandler);
         mqttClient.unsubscribe(responseTopic, (err) => {

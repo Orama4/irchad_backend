@@ -150,7 +150,7 @@ export const getDeviceHeartbeat = (req: Request, res: Response) => {
   const numDeviceId = Number(deviceId);
   
   // First, check if we have the data in memory
-  const heartbeatData = getLastHeartbeatData(numDeviceId);
+  /*const heartbeatData = getLastHeartbeatData(numDeviceId);
   
   if (heartbeatData) {
     return res.json({
@@ -160,6 +160,8 @@ export const getDeviceHeartbeat = (req: Request, res: Response) => {
     });
   }
   
+
+  */
   // If not in memory, request it from the device
   requestHeartbeatData(numDeviceId);
   return res.status(202).json({ 

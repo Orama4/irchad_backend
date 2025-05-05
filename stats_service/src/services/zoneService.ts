@@ -1,4 +1,6 @@
 import prisma from "../lib/prisma";
+
+
 export const getZones = async (page = 1,query="",pageSize = 10) => {
     const skip = (page - 1) * pageSize; 
     const zones =  await  prisma.zone.findMany({

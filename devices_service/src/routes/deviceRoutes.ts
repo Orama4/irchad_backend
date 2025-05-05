@@ -8,7 +8,7 @@ import {
   getRiskyDevices
 } from "../controllers/deviceController";
 
-import {getAllDevices,getDevice,createDevice,updateDevice, deleteDevice} from "../controllers/deviceController";
+import {getAllDevices,getDevice,createDevice,updateDevice, deleteDevice,getNotificationsForDevice} from "../controllers/deviceController";
 
 const router = express.Router();
 
@@ -22,7 +22,7 @@ router.post('/subscribe/:deviceId', subscribeDeviceUpdates); // Subscribe to dev
 // Heartbeat data routes
 router.get('/heartbeat/:deviceId', getDeviceHeartbeat);  //first checks cached data, then requests new data if needed
 router.get('/risky-devices', getRiskyDevices);      // Get all risky devices
-
+router.get('/notifications/:deviceId',getNotificationsForDevice);
 
 router.get("/",getAllDevices);//http://localhost:5002/devices?page=1&pageSize=5
 router.get("/:id",getDevice);//http://localhost:5002/devices/3

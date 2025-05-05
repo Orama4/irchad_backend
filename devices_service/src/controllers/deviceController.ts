@@ -6,7 +6,8 @@ import {
   deviceHeartbeatStore,
   riskyDevices,
   requestHeartbeatData,
-  getLastHeartbeatData
+  getLastHeartbeatData ,
+  getAndMarkDeviceAlerts 
 } from '../services/deviceService';
 
 import { 
@@ -36,6 +37,22 @@ export const getAllDevices = async (req: Request, res: Response) => {
       success: false, 
       error: (error as Error).message 
     });
+  }
+};
+
+export const getNotificationsForDevice = async (req: Request, res: Response) => {
+  const deviceId = Number(req.params.deviceId);
+  
+  if (isNaN(deviceId)) {
+    return res.status(400).json({ error: "Invalid device ID" });
+  }
+
+  try {
+    const alerts = await getAndMarkDeviceAlerts(deviceId);
+    return res.status(200).json(alerts);
+  } catch (error) {
+    console.error("❌ Failed to fetch notifications:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -150,7 +167,7 @@ export const getDeviceHeartbeat = (req: Request, res: Response) => {
   const numDeviceId = Number(deviceId);
   
   // First, check if we have the data in memory
-  const heartbeatData = getLastHeartbeatData(numDeviceId);
+  /*const heartbeatData = getLastHeartbeatData(numDeviceId);
   
   if (heartbeatData) {
     return res.json({
@@ -160,6 +177,8 @@ export const getDeviceHeartbeat = (req: Request, res: Response) => {
     });
   }
   
+
+  */
   // If not in memory, request it from the device
   requestHeartbeatData(numDeviceId);
   return res.status(202).json({ 

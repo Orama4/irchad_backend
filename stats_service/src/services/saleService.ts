@@ -7,15 +7,15 @@ export const getTotalSalesService = async (): Promise<number> => {
 
 export const getTotalRevenueService = async (): Promise<number> => {
     const sales = await prisma.sale.findMany({
-        include: { device: true }, 
+        include: { Device: true }, 
     });
 
-    const totalRevenue = sales.reduce((sum : number , sale  ) => sum + (sale.device.price || 0), 0);
+    const totalRevenue = sales.reduce((sum : number , sale  ) => sum + (sale.Device.price || 0), 0);
 
     return totalRevenue;
-    };
+  };
 
-    export const getSalesStatisticsService = async (/*startDate: Date, endDate: Date,*/ groupBy:string="month") => {
+export const getSalesStatisticsService = async (/*startDate: Date, endDate: Date,*/ groupBy:string="month") => {
         const dateFormat =
             groupBy === "day" ? 'YYYY-MM-DD' :
             groupBy === "month" ? 'YYYY-MM' :
@@ -49,10 +49,9 @@ export const getTotalRevenueService = async (): Promise<number> => {
 return sortedStats;
     
      
-    };
+  };
     
     
-
 export const getSalesListService = async (page: number, query:string,pageSize: number) => {
     const skip = (page - 1) * pageSize;
 
@@ -64,8 +63,8 @@ export const getSalesListService = async (page: number, query:string,pageSize: n
         select: {
             id: true,
             createdAt: true,
-            device: { select: { type: true, price: true } },
-            buyer: { select: { user: { select: { profile: { select: { lastname: true, firstname: true } } } } } }
+            Device: { select: { type: true, price: true } },  // update this line
+            EndUser: { select: { User: { select: { Profile: { select: { lastname: true, firstname: true } } } } } }  // update this line
         },
         skip,
         take: pageSize,
@@ -89,7 +88,7 @@ export const getSales = async (
   // Only apply device type filter if query is provided and not "all"
   const whereClause :any = {};
     if (query && query !== "all") {
-        whereClause.device = { type: query };
+        whereClause.Device = { type: query };
     }
 
   try {
@@ -98,12 +97,12 @@ export const getSales = async (
       select: {
         id: true,
         createdAt: true,
-        device: { select: { type: true, price: true } },
-        buyer: {
+        Device: { select: { type: true, price: true } },
+        EndUser : {
           select: {
-            user: {
+            User: {
               select: {
-                profile: { select: { lastname: true, firstname: true } },
+                Profile: { select: { lastname: true, firstname: true } },
               },
             },
           },

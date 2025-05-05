@@ -1,6 +1,6 @@
 import mqttClient from '../utils/mqtt_client';
 import { PrismaClient } from '@prisma/client';
-import { DeviceStatus } from "../../prisma/node_modules/@prisma/client";
+import { DeviceStatus } from "../node_modules/@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -57,7 +57,7 @@ const handleHeartbeatMessage = (deviceId: string, heartbeatData: HeartbeatData) 
   console.log(`📡 Received heartbeat from ${deviceId} at ${new Date(heartbeatData.timestamp * 1000).toLocaleString()}`);
   
   // Analyze metrics for risk factors
-  analyzeMetrics(deviceId, heartbeatData);
+ // analyzeMetrics(deviceId, heartbeatData);
 };
 
 // Function to analyze device metrics for risk factors
@@ -104,19 +104,69 @@ const analyzeMetrics = (deviceId: string, heartbeatData: HeartbeatData) => {
   }
 };
 
-// Function to send device command
-export const sendDeviceCommand = (deviceId: number, command: 'activer' | 'desactiver' | 'set_defective' | 'set_maintenance' | 'status' | 'get_heartbeat_data') => {
-  const topic = `device${deviceId}/request`;
-  const payload = JSON.stringify({ command });
+// Function to send a device command and handle response
+export const sendDeviceCommand = (
+  deviceId: number,
+  command: string,
+  payloadData: object = {}
+): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    const requestTopic = `device${deviceId}/request`;
+    const responseTopic = `device${deviceId}/response`;
+    const payload = JSON.stringify({ command, ...payloadData });
 
-  mqttClient.publish(topic, payload, (err) => {
-    if (err) {
-      console.error(`❌ Failed to send command to ${deviceId}`, err);
-    } else {
-      console.log(`📤 Command sent to ${deviceId}: ${command}`);
-    }
+    console.log(payload);
+
+    // Subscribe to response topic
+    mqttClient.subscribe(responseTopic, (err) => {
+      if (err) {
+        console.error(`❌ Failed to subscribe to ${responseTopic}`, err);
+        return reject(err);
+      }
+      console.log(`✅ Subscribed to ${responseTopic}`);
+    });
+
+    // Send the command
+    mqttClient.publish(requestTopic, payload, (err) => {
+      if (err) {
+        console.error(`❌ Failed to send command '${command}' to device ${deviceId}`, err);
+        return reject(err);
+      }
+      console.log(`📡 Command '${command}' sent to device ${deviceId}`);
+    });
+
+    // Wait for the response and then unsubscribe
+    const messageHandler = (topic: string, message: Buffer) => {
+      if (topic === responseTopic) {
+        const response = JSON.parse(message.toString());
+        console.log(response);
+
+        mqttClient.removeListener('message', messageHandler);
+        mqttClient.unsubscribe(responseTopic, (err) => {
+          if (err) {
+            console.error(`❌ Failed to unsubscribe from ${responseTopic}`, err);
+          } else {
+            console.log(`✅ Unsubscribed from ${responseTopic}`);
+          }
+        });
+
+        resolve(response);
+      }
+    };
+
+    mqttClient.on('message', messageHandler);
+
+    // Timeout if no response within 5 seconds
+    setTimeout(() => {
+      mqttClient.removeListener('message', messageHandler);
+      mqttClient.unsubscribe(responseTopic, () => {});
+
+      // Reject with a custom message
+      reject(new Error('ODB is not activated or not responding'));
+    }, 5000);  // Timeout after 5 seconds
   });
 };
+
 
 // Function to request device status
 export const sendStatusRequest = (deviceId: number) => {
@@ -236,7 +286,7 @@ export async function createIntervention(
   type: 'preventive' | 'curative',
   deviceId: number,
   maintainerId: number,
-  priority: number,
+  Priority: String,
   isRemote: boolean = false ,
   planDate: Date = new Date()
 ) {
@@ -244,9 +294,9 @@ export async function createIntervention(
     const intervention = await prisma.intervention.create({
       data: {
         type,
-        device: { connect: { id: deviceId } },
-        maintainer: { connect: { id: maintainerId } },
-        priority,
+        Device: { connect: { id: deviceId } },
+        Maintainer: { connect: { id: maintainerId } },
+        Priority,
         isRemote,
         planDate,
       },
@@ -267,7 +317,7 @@ const setDeviceDefective = async (deviceId: number, reason: string = '') => {
     "curative", 
     deviceId, 
     1, // Maintainer ID
-    1, // Priority (high)
+    "1", // Priority (high)
     false ,
     new Date()
   );
@@ -280,7 +330,7 @@ const setDeviceOutOfService = async (deviceId: number) => {
     "curative", 
     deviceId, 
     1, // Maintainer ID
-    1, // Priority (high)
+    "1", // Priority (high)
     true ,
     new Date()
   );
@@ -443,3 +493,58 @@ export const deleteDeviceService = async (id: number) => {
     throw error;
   }
 };
+
+export async function createNotificationForDeviceAlert(alert: { deviceId: string }, content: string) {
+  try {
+    const device = await prisma.device.findUnique({
+      where: { id: parseInt(alert.deviceId) },
+      include: { EndUser: { include: { User: true } } },
+    });
+    
+    if (device?.EndUser?.User?.id) {
+      await prisma.notification.create({
+        data: {
+          content,
+          userId: device.EndUser.User.id,
+        },
+      });
+      console.log('✅ Notification enregistrée en base de données.');
+    } else {
+      console.warn('⚠️ Aucun utilisateur lié à ce dispositif.');
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors de la création de la notification:', error);
+  }
+}
+
+
+export async function getAndMarkDeviceAlerts(deviceId: number) {
+  try {
+    const device = await prisma.device.findUnique({
+      where: { id: deviceId },
+      select: { EndUser: { select: { userId: true } } }, 
+    });
+
+    if (!device?.EndUser?.userId) {
+      console.warn('⚠️ Aucun utilisateur trouvé pour ce dispositif.');
+      return [];
+    }
+
+    const userId = device.EndUser.userId; 
+
+    const alerts = await prisma.notification.findMany({
+      where: { userId, isRead: false }, 
+      orderBy: { createdAt: 'desc' },
+    });
+
+    await prisma.notification.updateMany({
+      where: { userId, isRead: false },
+      data: { isRead: true },
+    });
+
+    return alerts; 
+  } catch (error) {
+    console.error('❌ Erreur lors de la récupération ou mise à jour des notifications:', error);
+    throw error;
+  }
+}

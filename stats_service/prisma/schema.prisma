@@ -29,19 +29,19 @@ model Decider {
 
 model Device {
   id                Int                 @id @default(autoincrement())
-  nom               String              @default("Unnamed Device") @db.VarChar(255)
-  macAdresse        String              @default("UNKNOWN") @db.VarChar(255)
-  status            DeviceStatus
-  peripheriques     Json?
-  localisation      Json?
-  cpuUsage          Float?
-  ramUsage          Float?
-  price             Int?
-  manufacturingCost Float?
-  createdAt         DateTime            @default(now())
   type              String
+  status            DeviceStatus
+  price             Int?
+  createdAt         DateTime            @default(now())
   userId            Int?
+  cpuUsage          Float?
+  localisation      Json?
+  macAdresse        String              @db.VarChar(255)
   maintainerId      Int?
+  manufacturingCost Float?
+  nom               String              @db.VarChar(255)
+  peripheriques     Json?
+  ramUsage          Float?
   Maintainer        Maintainer?         @relation(fields: [maintainerId], references: [id])
   EndUser           EndUser?            @relation(fields: [userId], references: [id])
   Intervention      Intervention[]
@@ -50,18 +50,18 @@ model Device {
 }
 
 model EndUser {
-  id              Int           @id @default(autoincrement())
-  helperId        Int?
-  lastPos         Json?
-  userId          Int           @unique
-  status          String
-  createdAt       DateTime      @default(now())
-  urgenceContacts Contact[]
-  Device          Device[]
-  Helper          Helper?       @relation(fields: [helperId], references: [id])
-  User            User          @relation(fields: [userId], references: [id])
-  HelpRequest     HelpRequest[]
-  Sale            Sale[]
+  id          Int           @id @default(autoincrement())
+  helperId    Int?
+  lastPos     Json?
+  userId      Int           @unique
+  status      String
+  createdAt   DateTime      @default(now())
+  Contact     Contact[]
+  Device      Device[]
+  Helper      Helper?       @relation(fields: [helperId], references: [id])
+  User        User          @relation(fields: [userId], references: [id])
+  HelpRequest HelpRequest[]
+  Sale        Sale[]
 }
 
 model EnvUser {
@@ -104,9 +104,9 @@ model Helper {
 
 model Intervention {
   id           Int                @id @default(autoincrement())
+  type         InterventionType
   deviceId     Int
   maintainerId Int
-  type         InterventionType
   isRemote     Boolean?
   planDate     DateTime?
   Priority     String?            @db.VarChar(255)
@@ -143,7 +143,7 @@ model Log {
 model Maintainer {
   id           Int            @id @default(autoincrement())
   userId       Int            @unique
-  Devices      Device[]
+  Device       Device[]
   Intervention Intervention[]
   User         User           @relation(fields: [userId], references: [id])
 }
@@ -164,6 +164,13 @@ model Obstacle {
   description String      @db.VarChar(255)
   cords       Json
   Environment Environment @relation(fields: [envId], references: [id])
+}
+
+model Otp {
+  id        Int      @id @default(autoincrement())
+  email     String   @db.VarChar(100)
+  otp       String   @db.VarChar(6)
+  expiresAt DateTime
 }
 
 model POI {
@@ -199,8 +206,8 @@ model User {
   email             String              @unique @db.VarChar(100)
   password          String              @db.VarChar(255)
   role              Role?
-  lastLogin         DateTime?
-  createdAt         DateTime            @default(now())
+  lastLogin 		DateTime?
+  createdAt 		DateTime @default(now())
   Admin             Admin?
   Commercial        Commercial?
   Decider           Decider?
@@ -211,8 +218,8 @@ model User {
   Maintainer        Maintainer?
   Notification      Notification[]
   Profile           Profile?
-  securityIncidents SecurityIncident[]
   UserDeviceHistory UserDeviceHistory[]
+  securityIncidents   SecurityIncident[]
 }
 
 model UserDeviceHistory {
@@ -235,33 +242,6 @@ model Zone {
   createdAt   DateTime    @default(now())
   POI         POI[]
   Environment Environment @relation(fields: [envId], references: [id])
-}
-
-model Otp {
-  id        Int      @id @default(autoincrement())
-  email     String   @db.VarChar(100)
-  otp       String   @db.VarChar(6)
-  expiresAt DateTime
-}
-
-model Contact {
-  id        Int     @id @default(autoincrement())
-  nom       String
-  telephone String
-  endUserId Int
-  endUser   EndUser @relation(fields: [endUserId], references: [id])
-}
-
-model SecurityIncident {
-  id          Int           @id @default(autoincrement())
-  title       String        @db.VarChar(100)
-  description String        @db.VarChar(255)
-  severity    SeverityLevel @default(LOW)
-  reportedAt  DateTime      @default(now())
-  resolvedAt  DateTime?
-  reportedBy  Int
-  isResolved  Boolean       @default(false)
-  user        User          @relation(fields: [reportedBy], references: [id])
 }
 
 enum DeviceStatus {
@@ -314,9 +294,34 @@ enum ZoneType {
   Zone_danger
 }
 
+
+
+model Contact {
+  id         Int      @id @default(autoincrement())
+  nom        String
+  telephone  String
+  endUserId  Int                             // Foreign key
+  endUser    EndUser   @relation(fields: [endUserId], references: [id])
+}
+
+
+// Added enum for security incident severity levels
 enum SeverityLevel {
   LOW
   MEDIUM
   HIGH
   CRITICAL
+}
+
+// Added new model for security incident tracking
+model SecurityIncident {
+  id          Int           @id @default(autoincrement())
+  title       String        @db.VarChar(100)
+  description String        @db.VarChar(255)
+  severity    SeverityLevel @default(LOW)
+  reportedAt  DateTime      @default(now())
+  resolvedAt  DateTime?
+  reportedBy  Int
+  user        User          @relation(fields: [reportedBy], references: [id])
+  isResolved  Boolean       @default(false)
 }

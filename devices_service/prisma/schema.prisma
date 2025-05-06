@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "windows"]
 }
 
@@ -29,24 +29,24 @@ model Decider {
 
 model Device {
   id                Int                 @id @default(autoincrement())
-  nom               String              @default("Unnamed Device") @db.VarChar(255)        // New field: Nom
-  macAdresse        String              @default("UNKNOWN") @db.VarChar(255)        // Renamed from macAdr
-  status            DeviceStatus                                // Updated enum
-  peripheriques     Json?                                        // New field: Les périphériques attaché
-  localisation      Json?                                        // New field: Localisation
-  cpuUsage          Float?                                       // New field: CPU usage
-  ramUsage          Float?                                       // New field: RAM usage
-  price 		Int?
-  manufacturingCost 		Float?
-  createdAt 		DateTime @default(now())
-  type 		String
+  type              String
+  status            DeviceStatus
+  price             Int?
+  createdAt         DateTime            @default(now())
   userId            Int?
+  cpuUsage          Float?
+  localisation      Json?
+  macAdresse        String              @db.VarChar(255)
+  maintainerId      Int?
+  manufacturingCost Float?
+  nom               String              @db.VarChar(255)
+  peripheriques     Json?
+  ramUsage          Float?
+  Maintainer        Maintainer?         @relation(fields: [maintainerId], references: [id])
   EndUser           EndUser?            @relation(fields: [userId], references: [id])
+  Intervention      Intervention[]
   Sale              Sale[]
   UserDeviceHistory UserDeviceHistory[]
-  maintainerId  Int?         // New
-  Maintainer    Maintainer?  @relation(fields: [maintainerId], references: [id])
-  Intervention      Intervention[]
 }
 
 model EndUser {
@@ -56,12 +56,12 @@ model EndUser {
   userId      Int           @unique
   status      String
   createdAt   DateTime      @default(now())
+  Contact     Contact[]
   Device      Device[]
   Helper      Helper?       @relation(fields: [helperId], references: [id])
   User        User          @relation(fields: [userId], references: [id])
   HelpRequest HelpRequest[]
   Sale        Sale[]
-  urgenceContacts Contact[] 
 }
 
 model EnvUser {
@@ -103,17 +103,17 @@ model Helper {
 }
 
 model Intervention {
-  id           Int              @id @default(autoincrement())
-  deviceId     Int
-  Device       Device           @relation(fields: [deviceId], references: [id])
-  maintainerId Int
-  Maintainer   Maintainer       @relation(fields: [maintainerId], references: [id])
+  id           Int                @id @default(autoincrement())
   type         InterventionType
+  deviceId     Int
+  maintainerId Int
   isRemote     Boolean?
   planDate     DateTime?
-  Priority     String?          @db.VarChar(255)
-  description  String?          @db.VarChar(255)
+  Priority     String?            @db.VarChar(255)
+  description  String?            @db.VarChar(255)
   status       InterventionStatus @default(en_panne)
+  Device       Device             @relation(fields: [deviceId], references: [id])
+  Maintainer   Maintainer         @relation(fields: [maintainerId], references: [id])
 }
 
 model Itinerary {
@@ -143,9 +143,9 @@ model Log {
 model Maintainer {
   id           Int            @id @default(autoincrement())
   userId       Int            @unique
+  Device       Device[]
   Intervention Intervention[]
   User         User           @relation(fields: [userId], references: [id])
-  Devices      Device[]       // New: Devices managed by this maintainer
 }
 
 model Notification {
@@ -164,6 +164,13 @@ model Obstacle {
   description String      @db.VarChar(255)
   cords       Json
   Environment Environment @relation(fields: [envId], references: [id])
+}
+
+model Otp {
+  id        Int      @id @default(autoincrement())
+  email     String   @db.VarChar(100)
+  otp       String   @db.VarChar(6)
+  expiresAt DateTime
 }
 
 model POI {
@@ -287,12 +294,7 @@ enum ZoneType {
   Zone_danger
 }
 
-model Otp {
-  id        Int      @id @default(autoincrement())
-  email     String   @db.VarChar(100)
-  otp       String   @db.VarChar(6) // Store OTP as a 6-digit string
-  expiresAt DateTime
-}
+
 
 model Contact {
   id         Int      @id @default(autoincrement())

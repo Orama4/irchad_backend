@@ -1,4 +1,4 @@
-import mqtt, { MqttClient } from "mqtt";
+import mqtt, { MqttClient} from "mqtt";
 
 const MQTT_BROKER_URL = "mqtts://9f6d6fadb82c4fcba6aebc53d4b6cdf7.s1.eu.hivemq.cloud";
 const MQTT_USERNAME = "Esp_8266";

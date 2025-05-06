@@ -29,19 +29,19 @@ model Decider {
 
 model Device {
   id                Int                 @id @default(autoincrement())
-  nom               String              @default("Unnamed Device") @db.VarChar(255)
-  macAdresse        String              @default("UNKNOWN") @db.VarChar(255)
-  status            DeviceStatus
-  peripheriques     Json?
-  localisation      Json?
-  cpuUsage          Float?
-  ramUsage          Float?
-  price             Int?
-  manufacturingCost Float?
-  createdAt         DateTime            @default(now())
   type              String
+  status            DeviceStatus
+  price             Int?
+  createdAt         DateTime            @default(now())
   userId            Int?
+  cpuUsage          Float?
+  localisation      Json?
+  macAdresse        String              @db.VarChar(255)
   maintainerId      Int?
+  manufacturingCost Float?
+  nom               String              @db.VarChar(255)
+  peripheriques     Json?
+  ramUsage          Float?
   Maintainer        Maintainer?         @relation(fields: [maintainerId], references: [id])
   EndUser           EndUser?            @relation(fields: [userId], references: [id])
   Intervention      Intervention[]
@@ -104,9 +104,9 @@ model Helper {
 
 model Intervention {
   id           Int                @id @default(autoincrement())
+  type         InterventionType
   deviceId     Int
   maintainerId Int
-  type         InterventionType
   isRemote     Boolean?
   planDate     DateTime?
   Priority     String?            @db.VarChar(255)
@@ -166,6 +166,13 @@ model Obstacle {
   Environment Environment @relation(fields: [envId], references: [id])
 }
 
+model Otp {
+  id        Int      @id @default(autoincrement())
+  email     String   @db.VarChar(100)
+  otp       String   @db.VarChar(6)
+  expiresAt DateTime
+}
+
 model POI {
   id          Int         @id @default(autoincrement())
   zoneId      Int
@@ -199,8 +206,8 @@ model User {
   email             String              @unique @db.VarChar(100)
   password          String              @db.VarChar(255)
   role              Role?
-  lastLogin         DateTime?
-  createdAt         DateTime            @default(now())
+  lastLogin 		DateTime?
+  createdAt 		DateTime @default(now())
   Admin             Admin?
   Commercial        Commercial?
   Decider           Decider?
@@ -211,8 +218,8 @@ model User {
   Maintainer        Maintainer?
   Notification      Notification[]
   Profile           Profile?
-  securityIncidents SecurityIncident[]
   UserDeviceHistory UserDeviceHistory[]
+  securityIncidents   SecurityIncident[]
 }
 
 model UserDeviceHistory {
@@ -237,33 +244,6 @@ model Zone {
   Environment Environment @relation(fields: [envId], references: [id])
 }
 
-model SecurityIncident {
-  id          Int           @id @default(autoincrement())
-  title       String        @db.VarChar(100)
-  description String        @db.VarChar(255)
-  severity    SeverityLevel @default(LOW)
-  reportedAt  DateTime      @default(now())
-  resolvedAt  DateTime?
-  reportedBy  Int
-  isResolved  Boolean       @default(false)
-  user        User          @relation(fields: [reportedBy], references: [id])
-}
-
-model Contact {
-  id        Int     @id @default(autoincrement())
-  nom       String
-  telephone String
-  endUserId Int
-  EndUser   EndUser @relation(fields: [endUserId], references: [id])
-}
-
-model Otp {
-  id        Int      @id @default(autoincrement())
-  email     String   @db.VarChar(100)
-  otp       String   @db.VarChar(6)
-  expiresAt DateTime
-}
-
 enum DeviceStatus {
   connected
   disconnected
@@ -282,6 +262,12 @@ enum DeviceType {
 enum InterventionType {
   preventive
   curative
+}
+
+enum InterventionStatus {
+  en_panne
+  en_progres
+  complete
 }
 
 enum POICategory {
@@ -308,6 +294,18 @@ enum ZoneType {
   Zone_danger
 }
 
+
+
+model Contact {
+  id         Int      @id @default(autoincrement())
+  nom        String
+  telephone  String
+  endUserId  Int                             // Foreign key
+  endUser    EndUser   @relation(fields: [endUserId], references: [id])
+}
+
+
+// Added enum for security incident severity levels
 enum SeverityLevel {
   LOW
   MEDIUM
@@ -315,8 +313,15 @@ enum SeverityLevel {
   CRITICAL
 }
 
-enum InterventionStatus {
-  en_panne
-  en_progres
-  complete
+// Added new model for security incident tracking
+model SecurityIncident {
+  id          Int           @id @default(autoincrement())
+  title       String        @db.VarChar(100)
+  description String        @db.VarChar(255)
+  severity    SeverityLevel @default(LOW)
+  reportedAt  DateTime      @default(now())
+  resolvedAt  DateTime?
+  reportedBy  Int
+  user        User          @relation(fields: [reportedBy], references: [id])
+  isResolved  Boolean       @default(false)
 }

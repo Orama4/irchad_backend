@@ -77,6 +77,9 @@ export const getDevicesByMaintainerId = async (req: Request, res: Response): Pro
             localisation: true,
             cpuUsage: true,
             ramUsage: true,
+            price: true, 
+            manufacturingCost: true,
+            type: true, 
           },
         },
       },
@@ -151,6 +154,9 @@ export const getDeviceById = async (req: Request, res: Response): Promise<void> 
         localisation: true,
         cpuUsage: true,
         ramUsage: true,
+        price: true, 
+        manufacturingCost: true,
+        type: true, 
       },
     });
 
@@ -185,6 +191,19 @@ export const updateDeviceStatus = async (req: Request, res: Response): Promise<v
   try {
     const updatedDevice = await prisma.device.update({
       where: { id: deviceId },
+      select: {
+        id: true,
+        nom: true,
+        macAdresse: true,
+        status: true,
+        peripheriques: true,
+        localisation: true,
+        cpuUsage: true,
+        ramUsage: true,
+        price: true, 
+        manufacturingCost: true,
+        type: true, 
+      },
       data: { status: status as DeviceStatus },
     });
 

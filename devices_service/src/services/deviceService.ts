@@ -114,9 +114,6 @@ export const sendDeviceCommand = (
     const requestTopic = `device${deviceId}/request`;
     const responseTopic = `device${deviceId}/response`;
     const payload = JSON.stringify({ command, ...payloadData });
-
-    console.log(payload);
-
     // Subscribe to response topic
     mqttClient.subscribe(responseTopic, (err) => {
       if (err) {
@@ -525,6 +522,7 @@ export async function getAndMarkDeviceAlerts(deviceId: number) {
       select: { EndUser: { select: { userId: true } } }, 
     });
 
+    console.log('Device:', device); // Log the device object for debugging
     if (!device?.EndUser?.userId) {
       console.warn('⚠️ Aucun utilisateur trouvé pour ce dispositif.');
       return [];
@@ -537,14 +535,31 @@ export async function getAndMarkDeviceAlerts(deviceId: number) {
       orderBy: { createdAt: 'desc' },
     });
 
-    await prisma.notification.updateMany({
+   /* await prisma.notification.updateMany({
       where: { userId, isRead: false },
       data: { isRead: true },
-    });
+    });*/
 
     return alerts; 
   } catch (error) {
     console.error('❌ Erreur lors de la récupération ou mise à jour des notifications:', error);
     throw error;
+  }
+}
+
+
+export const marknotificationAsRead = async (notificationId: number) => {
+  try {
+    await prisma.notification.update({
+      where:{
+        id : notificationId
+      },
+      data:{
+        isRead:true
+      }
+    })
+    return true
+  } catch (error) {
+    return false;
   }
 }

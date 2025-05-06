@@ -1,3 +1,4 @@
+
 // seed.ts
 /*
 import { PrismaClient } from '@prisma/client';
@@ -232,9 +233,10 @@ main()
     await prisma.$disconnect();
   });*/
 
-  import { PrismaClient } from "@prisma/client";
+ import { PrismaClient } from "@prisma/client"
+ /*
 import { faker } from "@faker-js/faker";
-
+*/
 const prisma = new PrismaClient();
 
 async function main() {
@@ -265,7 +267,7 @@ async function main() {
 
   console.log("Deciders seeding completed successfully!");
 }
-
+/*
 main()
   .catch((e) => {
     console.error(e);
@@ -273,4 +275,32 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
-  });
+  });*/
+
+async function clearDevices(){
+  try {
+    console.log("Deleting all devices...");
+  //  await prisma.device.deleteMany({});
+    // add the real device ID = 123
+    await prisma.device.create({
+      data: {
+      id: 123,
+      type: "Ceinture",
+      status: "Actif",
+      price: 200,
+      macAdresse: "00:1A:2B:3C:4D:5E",
+      nom: "Ceinture connectée",
+      cpuUsage: 0,
+      ramUsage: 0,
+      manufacturingCost: 150,
+      localisation: { lat: 48.8566, lng: 2.3522 },
+      peripheriques: { sensors: ["accelerometer", "gyroscope"] }
+      },
+    });
+    console.log("done")
+  } catch (error) {
+    console.log("Error deleting devices:", error);
+  }
+}
+
+clearDevices()

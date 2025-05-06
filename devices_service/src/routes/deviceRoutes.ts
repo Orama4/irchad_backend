@@ -5,7 +5,8 @@ import {
   subscribeDeviceUpdates, 
   getDeviceHeartbeat, 
   refreshDeviceHeartbeat,
-  getRiskyDevices
+  getRiskyDevices,
+  markNotificationAsRead
 } from "../controllers/deviceController";
 
 import {getAllDevices,getDevice,createDevice,updateDevice, deleteDevice,getNotificationsForDevice} from "../controllers/deviceController";
@@ -18,6 +19,7 @@ router.post('/control', controlDevice);
 //status and subscribtion
 router.get('/status/:deviceId', requestDeviceStatus);  //sends a new request to the device for its status
 router.post('/subscribe/:deviceId', subscribeDeviceUpdates); // Subscribe to device updates
+router.put('/markNotification/:notificationId', markNotificationAsRead); // Mark notification as read
 
 // Heartbeat data routes
 router.get('/heartbeat/:deviceId', getDeviceHeartbeat);  //first checks cached data, then requests new data if needed

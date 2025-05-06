@@ -250,12 +250,12 @@ model Zone {
 }
 
 enum DeviceStatus {
-  Actif
-  Banne
-  Hors_service
-  Defectueux
-  En_maintenance
-  InActif
+  connected
+  disconnected
+  under_maintenance
+  out_of_service
+  defective
+  broken_down
 }
 
 enum DeviceType {

@@ -7,7 +7,8 @@ import {
   riskyDevices,
   requestHeartbeatData,
   getLastHeartbeatData ,
-  getAndMarkDeviceAlerts 
+  getAndMarkDeviceAlerts,
+  marknotificationAsRead
 } from '../services/deviceService';
 
 import { 
@@ -55,6 +56,22 @@ export const getNotificationsForDevice = async (req: Request, res: Response) => 
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+export const markNotificationAsRead = async (req: Request, res: Response) => {
+  try {
+    const notificationId = Number(req.params.notificationId || "0")
+    if (isNaN(notificationId)) {
+      return res.status(400).json({ error: "Invalid notification ID" });
+    }
+    const marked = await marknotificationAsRead(notificationId)
+    if (!marked) {
+      return res.status(404).json({ error: "Notification not found" });
+    }
+    return res.status(200).json({ message: "Notification marked as read" });
+  } catch (error) {
+    return res.status(500).json({error : true , message : "Failed to mark notification as read"});
+  }
+}
 
 export const getDevice = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -162,7 +179,7 @@ export const subscribeDeviceUpdates = (req: Request, res: Response) => {
 };
 
 // Get last known heartbeat for a device from memory
-export const getDeviceHeartbeat = (req: Request, res: Response) => {
+export const getDeviceHeartbeat = async (req: Request, res: Response) => {
   const { deviceId } = req.params;
   const numDeviceId = Number(deviceId);
   
@@ -180,10 +197,19 @@ export const getDeviceHeartbeat = (req: Request, res: Response) => {
 
   */
   // If not in memory, request it from the device
-  requestHeartbeatData(numDeviceId);
-  return res.status(202).json({ 
-    message: `No heartbeat data available. Request sent to device ${deviceId}. Try again shortly.` 
-  });
+  //requestHeartbeatData(numDeviceId);
+  try {
+    const response = await sendDeviceCommand(numDeviceId, 'status');
+    return res.json({
+      deviceId: numDeviceId,
+      heartbeat: response,
+      lastUpdated: new Date(response.timestamp * 1000).toISOString()
+    });
+  } catch (error) {
+    return res.status(202).json({ 
+      message: `No heartbeat data available. Request sent to device ${deviceId}. Try again shortly.` 
+    });
+  }
 };
 
 

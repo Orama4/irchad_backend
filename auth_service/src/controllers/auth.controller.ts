@@ -111,12 +111,13 @@ export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body as LoginRequest;
 
-    // Find user
+    // Find user with all possible relations
     const user = await prisma.user.findUnique({
       where: { email },
       include: {
         Profile: true,
-        Maintainer: true, // Include Maintainer relation
+        Maintainer: true,
+        EndUser: true, // Ajoutez cette relation
       },
     });
 
@@ -139,23 +140,28 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       first_name: user?.Profile?.firstname,
       last_name: user?.Profile?.lastname,
       role: user.role || undefined,
-      maintainerId: user.Maintainer?.id, // Include maintainerId in the token payload
+      maintainerId: user.Maintainer?.id,
+      endUserId: user.EndUser?.id, // Ajoutez endUserId au token
     };
 
     const token = jwt.sign(tokenPayload, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN,
     });
 
-    res.status(200).json({
+    // Prepare response
+    const response = {
       message: "Login successful",
       token,
       user: {
         id: user.id,
         email: user.email,
         role: user.role,
-        maintainerId: user.Maintainer?.id, // Include maintainerId in the response
+        maintainerId: user.Maintainer?.id,
+        endUserId: user.EndUser?.id, // Ajoutez endUserId à la réponse
       },
-    });
+    };
+
+    res.status(200).json(response);
   } catch (error: any) {
     console.error("Login error:", error?.message);
     res.status(500).json({ message: "An error occurred during login" });
